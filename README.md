@@ -1,2 +1,2 @@
 # Ritsuko
-IaC for my servers
+IaC for my servers based on Ansible
