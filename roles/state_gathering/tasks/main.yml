@@ -16,7 +16,8 @@
 - collections:
     - ansible.builtin
   block:
-    - set_fact:
+    - name: Switching to default ssh port 22
+      set_fact:
         ansible_port: 22
 
     - name: Test ssh connection on 22
