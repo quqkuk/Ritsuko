@@ -1,0 +1,12 @@
+---
+- name: Gather the state of the Magisystem
+  hosts: all
+  gather_facts: false
+  roles:
+    - role: state_gathering
+
+- hosts: all
+  gather_facts: false
+  tasks:
+    - ansible.builtin.debug:
+        var: host_state

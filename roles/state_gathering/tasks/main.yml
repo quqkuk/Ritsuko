@@ -1,0 +1,39 @@
+---
+- collections:
+    - ansible.builtin
+  block:
+    - name: Test ssh connection on configured port
+      wait_for_connection:
+        timeout: 10
+      register: state_gathering_connection_test_result
+
+    - name: Setting state variable
+      set_fact:
+        host_state: "{{ possible_host_states.ready }}"
+      when: state_gathering_connection_test_result is succeeded
+  ignore_errors: True
+
+- collections:
+    - ansible.builtin
+  block:
+    - set_fact:
+        ansible_port: 22
+
+    - name: Test ssh connection on 22
+      wait_for_connection:
+        timeout: 10
+      register: state_gathering_connection_test_result
+
+    - name: Setting state variable
+      set_fact:
+        host_state: "{{ possible_host_states.just_installed }}"
+      when: state_gathering_connection_test_result is succeeded
+  ignore_errors: True
+  when: state_gathering_connection_test_result is failed
+
+- name: Setting state variable
+  collections:
+    - ansible.builtin
+  set_fact:
+    host_state: "{{ possible_host_states.not_installed }}"
+  when: state_gathering_connection_test_result is failed

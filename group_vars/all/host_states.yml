@@ -1,0 +1,5 @@
+---
+possible_host_states:
+  ready:          1
+  just_installed: 2
+  not_installed:  3
