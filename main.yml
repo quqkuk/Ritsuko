@@ -7,9 +7,13 @@
 
 - name: Setting up the Magisystem
   hosts: edge
-  roles:
-    - role: edge/install
+  pre_tasks:
+    # Placeholder for automatic OS installation
+    - name: Install OS
+      ansible.builtin.fail:
+        msg: Install OpenSuse
       when: host_state >= possible_host_states.not_installed
+  roles:
     - role: edge/setup
       when: host_state >= possible_host_states.just_installed
     - role: edge/containers
