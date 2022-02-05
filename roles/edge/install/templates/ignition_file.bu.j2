@@ -7,6 +7,12 @@ storage:
       wipe_filesystem: true
       format: btrfs
       label: root
+  files:
+    - path: /etc/ssh/sshd_config.d/90-change-port.conf
+      overwrite: true
+      contents: |
+        # Changing the ssh port
+        Port 69
 systemd:
   units:
     - name: docker.socket
