@@ -1,0 +1,26 @@
+variant: fcos
+version: 1.4.0
+storage:
+  # if necessary, the boot partition could be shrunken
+  filesystems:
+    - device: /dev/disk/by-partlabel/root
+      wipe_filesystem: true
+      format: btrfs
+      label: root
+systemd:
+  units:
+    - name: docker.socket
+      enabled: false
+      mask: true
+    - name: docker.service
+      enabled: false
+      mask: true
+    - name: podman.socket
+      enabled: true
+passwd:
+  users:
+    - name: {{ ansible_user }}
+      ssh_authorized_keys:
+        - {{ edge_install_public_key }}
+      groups:
+        - sudo
