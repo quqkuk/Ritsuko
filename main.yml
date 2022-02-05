@@ -9,12 +9,9 @@
   hosts: edge
   gather_facts: false
   pre_tasks:
-    # Placeholder for automatic OS installation
-    - name: Install OS
-      ansible.builtin.fail:
-        msg: Install OpenSuse
-      when: host_state | int >= possible_host_states.not_installed
   roles:
+    - role: edge/install
+      when: host_state | int >= possible_host_states.not_installed
     - role: edge/setup
       when: host_state | int >= possible_host_states.just_installed
     - role: edge/containers
