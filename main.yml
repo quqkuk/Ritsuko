@@ -11,8 +11,5 @@
   pre_tasks:
   roles:
     - role: edge/install
-      when: host_state | int >= possible_host_states.not_installed
-    - role: edge/setup
-      when: host_state | int >= possible_host_states.just_installed
+      when: os_is_installed is falsy(convert_bool=True)
     - role: edge/containers
-      when: host_state | int >= possible_host_states.ready
