@@ -1,7 +1,6 @@
 ---
 collections:
   - hetzner.hcloud
-  - community.libvirt
 
 #roles:
 #  -
