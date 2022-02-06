@@ -1,3 +1,3 @@
 ---
-ansible_user: {{ undef(hint="Username to use for the ssh connection") }}  
-ansible_ssh_private_key_file: {{ undef(hint="Path to the private key to use for the ssh connection") }}  
+ansible_user: '{{ undef(hint="Username to use for the ssh connection") }}'
+ansible_ssh_private_key_file: '{{ undef(hint="Path to the private key to use for the ssh connection") }}'
