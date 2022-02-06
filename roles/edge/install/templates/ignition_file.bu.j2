@@ -33,6 +33,6 @@ passwd:
   users:
     - name: {{ ansible_user }}
       ssh_authorized_keys:
-        - {{ edge_install_public_key }}
+        - {{ lookup('file', ansible_ssh_private_key_file+'.pub', errors='strict') }}
       groups:
         - sudo
