@@ -13,6 +13,11 @@ storage:
       contents: |
         # Changing the ssh port
         Port 69
+    - path: /etc/ssh/sshd_config.d/40-prohibit-root-login.conf
+      overwrite: true
+      contents: |
+        # Prohibiting login as root
+        PermitRootLogin no
 systemd:
   units:
     - name: docker.socket
