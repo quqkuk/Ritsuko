@@ -1,15 +1,13 @@
 ---
-- name: Gather the state of the Magisystem
-  hosts: edge
-  gather_facts: false
-  roles:
-    - state_gathering
-
 - name: Setting up the Magisystem
   hosts: edge
   gather_facts: false
-  pre_tasks:
   roles:
+    - role: state_gathering
     - role: edge/install
-      when: os_is_installed is falsy(convert_bool=True)
+      when: not (setup_completed | bool)
+
+- name: Managing containers on the Magisystem
+  hosts: edge
+  roles:
     - role: edge/containers

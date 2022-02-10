@@ -11,14 +11,16 @@ storage:
   files:
     - path: /etc/ssh/sshd_config.d/90-change-port.conf
       overwrite: true
-      contents: |
-        # Changing the ssh port
-        Port 69
+      contents:
+        inline: |
+          # Changing the ssh port
+          Port {{ edge_install_ansible_port }}
     - path: /etc/ssh/sshd_config.d/40-prohibit-root-login.conf
       overwrite: true
-      contents: |
-        # Prohibiting login as root
-        PermitRootLogin no
+      contents:
+        inline: |
+          # Prohibiting login as root
+          PermitRootLogin no
 systemd:
   units:
     - name: docker.socket
@@ -31,7 +33,7 @@ systemd:
       enabled: true
 passwd:
   users:
-    - name: {{ ansible_user }}
+    - name: {{ edge_install_ansible_user }}
       ssh_authorized_keys:
         - {{ lookup('file', ansible_ssh_private_key_file+'.pub', errors='strict') }}
       groups:

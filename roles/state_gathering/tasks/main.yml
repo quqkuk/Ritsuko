@@ -7,7 +7,9 @@
         timeout: 10
       register: state_gathering_connection_test_result
 
+    # Add checks, after instaling the OS the Btrfs subvolume for containers should still be missing
+
     - name: Setting state variable
       set_fact:
-        os_is_installed: "{{ state_gathering_connection_test_result is succeeded }}"
+        setup_completed: "{{ state_gathering_connection_test_result is succeeded }}"
   ignore_errors: True

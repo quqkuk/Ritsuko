@@ -1,6 +1,10 @@
 ---
 collections:
   - hetzner.hcloud
+  - community.general
+  - containers.podman
+  - ansible.posix
+  - ansible.utils
 
 #roles:
 #  -
