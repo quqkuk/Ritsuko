@@ -161,6 +161,8 @@
     ansible_port: '{{ edge_install_ansible_port }}'
     ansible_user: '{{ edge_install_ansible_user }}'
 
+#TODO: Remove host from known_hosts with ansible.builtin.known_hosts in order to avoid ssh errors when connecting to newly installed host
+
 # Check if Reboot happened
 - name: SSH Check
   ansible.builtin.wait_for_connection:
