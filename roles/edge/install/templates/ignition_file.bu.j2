@@ -1,13 +1,23 @@
 variant: fcos
 version: 1.4.0
 storage:
-  # if necessary, the boot partition could be shrunken
-  filesystems:
-    - device: /dev/disk/by-partlabel/root
-      wipe_filesystem: true
-      format: btrfs
-      label: root
-      mount_options: ["compress=zstd"]
+  disks:
+    # I hope it stays the same
+    # TODO: The partition numbers could be dynamic
+    - device: /dev/{{ edge_install_installation_drive }}
+      partitions:
+        - number: 5
+          wipe_partition_entry: True
+          should_exist: False
+        # We use /var to host the container volumes subvolume
+        - number: 4
+          resize: True
+          size_mib: 0
+#  This doesn't work on MicroOS right now
+#  filesystems:
+#    - device: '/dev/disk/by-partlabel/p.spare'
+#      format: btrfs
+#      mount_options: ["compress=zstd"]
   files:
     - path: /etc/ssh/sshd_config.d/90-change-port.conf
       overwrite: true
@@ -21,20 +31,15 @@ storage:
         inline: |
           # Prohibiting login as root
           PermitRootLogin no
+    - path: /etc/sudoers.d/90-permit-user-nopasswd
+      overwrite: true
+      contents:
+        inline: |
+          # Permit passwordless sudo to {{ edge_install_ansible_user }}
+          {{ edge_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
 systemd:
   units:
-    - name: docker.socket
-      enabled: false
-      mask: true
-    - name: docker.service
-      enabled: false
-      mask: true
     - name: podman.socket
       enabled: true
-passwd:
-  users:
-    - name: {{ edge_install_ansible_user }}
-      ssh_authorized_keys:
-        - {{ lookup('file', ansible_ssh_private_key_file+'.pub', errors='strict') }}
-      groups:
-        - sudo
+    - name: sshd.service
+      enabled: true

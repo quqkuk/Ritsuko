@@ -1,0 +1,99 @@
+#!/bin/bash
+# combustion: network
+# Network is needed to install semanage/policycoreutils-python-utils
+
+set -ex
+
+# Mount home subvolume
+mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
+
+# Create User (ignition should set sudo up automatically)
+useradd --create-home {{ edge_install_ansible_user }}
+SSH_FOLDER="/home/{{ edge_install_ansible_user }}/.ssh"
+mkdir -pm700 "$SSH_FOLDER"
+cat > "$SSH_FOLDER/authorized_keys" <<EOF
+{{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}
+EOF
+chown {{ edge_install_ansible_user }}:users -R "$SSH_FOLDER"
+umount /home
+
+# Install semanage
+zypper --non-interactive install policycoreutils-python-utils
+# Add port to selinux
+semanage port -a -t ssh_port_t -p tcp {{ edge_install_ansible_port }}
+# Install python for ansible
+zypper --non-interactive install python310
+
+# Changing logrotate
+sed -i 's/^\(un\)\?compress/#\1compress/' /etc/logrotate.conf
+
+# Changing GRUB Timeout
+sed -i 's/^GRUB_TIMEOUT=[0-9]\+$/GRUB_TIMEOUT=2/' /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+# Creating subvolume, setting compression and adding config to snapper
+# Apparently /dev/disk/by-partlabel/p.spare does not exist
+mount /dev/disk/by-label/SPARE /mnt
+
+btrfs property set /mnt compression zstd
+btrfs -q subvolume create /mnt/container-volumes
+btrfs property set /mnt/container-volumes compression zstd
+
+umount /mnt
+
+cat > /etc/snapper/configs/container-volumes <<EOF
+# subvolume to snapshot
+SUBVOLUME="/var/container-volumes"
+
+# filesystem type
+FSTYPE="btrfs"
+
+# btrfs qgroup for space aware cleanup algorithms
+#QGROUP=""
+
+# fraction of the filesystems space the snapshots may use
+SPACE_LIMIT="0.5"
+
+# fraction of the filesystems space that should be free
+FREE_LIMIT="0.2"
+
+# users and groups allowed to work with config
+ALLOW_USERS=""
+ALLOW_GROUPS=""
+
+# sync users and groups from ALLOW_USERS and ALLOW_GROUPS to .snapshots
+# directory
+SYNC_ACL="no"
+
+# start comparing pre- and post-snapshot in background after creating
+# post-snapshot
+BACKGROUND_COMPARISON="yes"
+
+# run daily number cleanup
+NUMBER_CLEANUP="yes"
+
+# limit for number cleanup
+NUMBER_MIN_AGE="0"
+NUMBER_LIMIT="10"
+NUMBER_LIMIT_IMPORTANT="10"
+
+# create hourly snapshots
+TIMELINE_CREATE="yes"
+
+# cleanup hourly snapshots after some time
+TIMELINE_CLEANUP="yes"
+
+# limits for timeline cleanup
+TIMELINE_MIN_AGE="1800"
+TIMELINE_LIMIT_HOURLY="5"
+TIMELINE_LIMIT_DAILY="12"
+TIMELINE_LIMIT_WEEKLY="0"
+TIMELINE_LIMIT_MONTHLY="2"
+TIMELINE_LIMIT_YEARLY="0"
+
+# cleanup empty pre-post-pairs
+EMPTY_PRE_POST_CLEANUP="yes"
+
+# limits for empty pre-post-pair cleanup
+EMPTY_PRE_POST_MIN_AGE="0"
+EOF

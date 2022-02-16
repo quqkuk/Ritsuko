@@ -23,72 +23,76 @@
 - name: Choosing installation drive
   ansible.builtin.set_fact:
     edge_install_installation_drive: '{{ item }}'
-  loop: '{{ ansible_facts.devices.keys() | sort }}'
+  loop: '{{ non_removable_devices }}'
   # Set Fact runs only if the variable has not been defined and if the list of indices returned by index_of is empty
   when: >
     edge_install_installation_drive is undefined and
-    (mounted_devices | ansible.utils.index_of('search', item, fail_on_missing=False, wantlist=True) | length) == 0
+    (mounted_partitions | ansible.utils.index_of('search', item, fail_on_missing=False, wantlist=True) | length) == 0
   vars:
-    mounted_devices: '{{ ansible_facts.mounts | map(attribute="device") | unique }}'
+    mounted_partitions: '{{ ansible_facts.mounts | map(attribute="device") | unique }}'
+    non_removable_devices: '{{ ansible_facts.devices | dict2items | rejectattr("value.removable", "truthy", convert_bool=True) | map(attribute="key") | sort }}'
 
 - name: Fail if we couldn't find an installation drive
   ansible.builtin.fail:
-    msg: 'Couldn''t find an installation drive among list: {{ ansible_facts.devices.keys() | list }}'
+    msg: 'Couldn''t find an installation drive among {{ ansible_facts.devices.keys() | list }}'
   when: edge_install_installation_drive is undefined
 
 - name: Stop before installation
   ansible.builtin.pause:
     echo: False
-    prompt: 'CoreOS is about to be installed {{ inventory_hostname }}''s remote device /dev/{{ edge_install_installation_drive }}. Use Ctrl+C to manage the flow or wait 10 seconds for the play to continue'
+    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device /dev/{{ edge_install_installation_drive }}'
     seconds: 10
 
-# Get Fedora CoreOS stable rootfs link from json (taken from the official download page)
-- name: Setting Fedora CoreOS Download link
-  delegate_to: localhost
-  connection: local
-  run_once: True
+- block:
+    - name: Sending installation script
+      ansible.builtin.copy:
+        src: install_ignition.sh
+        dest: ./install_ignition.sh
+        mode: 0544
+    - name: Run installation script
+      ansible.builtin.command: './install_ignition.sh /dev/{{ edge_install_installation_drive }}'
+      register: edge_install_script_result
+      failed_when: edge_install_script_result.rc != 0
+      changed_when: edge_install_script_result.rc == 0
+  always:
+    - name: Show command result
+      ansible.builtin.debug:
+        msg: '{{ edge_install_script_result is succeeded | ternary(edge_install_script_result.stdout_lines, edge_install_script_result.stderr_lines) }}'
+      when: edge_install_script_result is defined
+    # Remove script if sent
+    - name: Removing temporary file
+      ansible.builtin.file:
+        path: ./install_ignition.sh
+        state: absent
+
+# Update facts with new partition
+- name: Updating facts
+  ansible.builtin.setup:
+    gather_subset:
+      - hardware
+
+# The partition should have been created by install_ignition.sh
+- name: Choose config partition
   ansible.builtin.set_fact:
-    edge_install_download_url_object: '{{ lookup("url", "https://builds.coreos.fedoraproject.org/streams/stable.json", split_lines=False) | from_json | community.general.json_query(''architectures.x86_64.artifacts.metal.formats."raw.xz".disk'') }}'
+    edge_install_ignition_partition: '{{ partitions[(partitions | length) - 1] }}'
+  vars:
+    partitions: '{{ ansible_facts.devices[edge_install_installation_drive].partitions.keys() | sort }}'
 
-# TODO: Check checksum?? It may be hard to do in the recovery environment
-- name: Downloading and installing CoreOS
-  ansible.builtin.shell:
-    cmd: 'set -e && curl -sL "{{ edge_install_download_url_object.location }}" | xz -d >> /dev/{{ edge_install_installation_drive }} && sync'
-  register: edge_install_curl_xz_result
-  changed_when: edge_install_curl_xz_result.rc == 0
-
-# After writing to the drive, we have to update the facts to get the new partition table
-- name: Updating Facts
-  ansible.builtin.setup: {}
-
-# Get the first partition in the installation drive with label "boot"
-- name: Finding Boot Partition
-  ansible.builtin.set_fact:
-    edge_install_boot_partition: '{{ item.path }}'
-  loop: '{{ ansible_facts.devices[edge_install_installation_drive].partitions
-    | dict2items(key_name="path", value_name="partition")
-    | selectattr("partition.links.labels")
-    | sort(attribute="path") }}'
-  loop_control: 
-    label: '{{ item.path }}'
-  # Set Fact runs only if fact is undefined and if "boot" is found in one of the labels
-  when: >
-    edge_install_boot_partition is undefined and
-    (item.partition.links.labels | map('lower') | select('search', 'boot') | length) != 0
-
-- name: Fail if we couldn't find the boot partition
-  ansible.builtin.fail:
-    msg: 'Couldn''t find the boot partition among list: {{ ansible_facts.devices.keys() | list }}'
-  when: edge_install_boot_partition is undefined
+- name: Formatting the config partition
+  community.general.filesystem:
+    dev: '/dev/{{ edge_install_ignition_partition }}'
+    fstype: ext4
+    opts: -L ignition
+    state: present
 
 - block:
-    # Mount boot partition
-    - name: Mounting the boot partition
+    # Mount config partition
+    - name: Mounting the last partition
       ansible.posix.mount:
         boot: False
-        src: '/dev/{{ edge_install_boot_partition }}'
+        src: '/dev/{{ edge_install_ignition_partition }}'
         fstype: ext4
-        path: /mnt/boot
+        path: /mnt/ignition
         state: mounted
 
     # Locally generate Ignition config from Butane template
@@ -127,33 +131,44 @@
 
     - name: Create ignition folder
       ansible.builtin.file:
-        path: /mnt/boot/ignition
+        path: /mnt/ignition/ignition
         state: directory
+        mode: 0755
+
+    # Write the ignition config in /ignition/config.ign
+    - name: Writing ignition config
+      ansible.builtin.copy:
+        content: '{{ edge_install_ignition_config.stdout | string }}'
+        dest: /mnt/ignition/ignition/config.ign
         mode: 0644
 
-    # Write the ignition config in /boot/ignition/config.ign
-    # (boot should be currently mounted to /mnt/boot)
-    - name: Writing ignition config
+    - name: Create combustion folder
+      ansible.builtin.file:
+        path: /mnt/ignition/combustion
+        state: directory
+        mode: 0755
+
+    - name: Add script file
       ansible.builtin.template:
-        src: single_variable.j2
-        dest: /mnt/boot/ignition/config.ign
-        mode: 0644
-      vars:
-        content: '{{ edge_install_ignition_config.stdout }}'
+        src: combustion_script.j2
+        dest: /mnt/ignition/combustion/script
+        mode: 0744
   always:
-    # Unmount the boot partition if mounted
-    - name: Unmounting the boot partition
+    # Unmount the config partition if mounted
+    - name: Unmounting the last partition
       ansible.posix.mount:
         boot: False
-        path: /mnt/boot
+        path: /mnt/ignition
         state: absent
 
 # Reboot to disk (reboots deactivate hetzner's recovery environment)
-# We ignore errors because sshd should be listening to another port
+# We have a very short timeout and ignore errors because sshd should be listening to another port
 - name: Rebooting to disk
   ignore_errors: True
   ansible.builtin.reboot:
     msg: ''
+    connect_timeout: 1
+    reboot_timeout: 1
 
 # Turn everything back to normal
 - name: Reapplying ssh config
@@ -171,4 +186,4 @@
 # Check if Reboot happened
 - name: SSH Check
   ansible.builtin.wait_for_connection:
-    timeout: 10
+    timeout: 120

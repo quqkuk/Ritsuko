@@ -9,5 +9,6 @@
 
 - name: Managing containers on the Magisystem
   hosts: edge
+  become: True
   roles:
     - role: edge/containers
