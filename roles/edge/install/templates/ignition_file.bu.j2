@@ -31,6 +31,12 @@ storage:
         inline: |
           # Prohibiting login as root
           PermitRootLogin no
+    - path: /etc/ssh/sshd_config.d/40-disable-password-authentication.conf
+      overwrite: true
+      contents:
+        inline: |
+          # Disable Password Authentication
+          PasswordAuthentication no
     - path: /etc/sudoers.d/90-permit-user-nopasswd
       overwrite: true
       contents:
