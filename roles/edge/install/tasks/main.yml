@@ -60,7 +60,7 @@
         msg: '{{ edge_install_script_result is succeeded | ternary(edge_install_script_result.stdout_lines, edge_install_script_result.stderr_lines) }}'
       when: edge_install_script_result is defined
     # Remove script if sent
-    - name: Removing temporary file
+    - name: Removing installation script file
       ansible.builtin.file:
         path: ./install_ignition.sh
         state: absent
