@@ -39,14 +39,14 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 mount /dev/disk/by-label/SPARE /mnt
 
 btrfs property set /mnt compression zstd
-btrfs -q subvolume create /mnt/container-volumes
-btrfs property set /mnt/container-volumes compression zstd
+btrfs -q subvolume create /mnt/{{ container-volumes-folder }}
+btrfs property set /mnt/{{ container-volumes-folder }} compression zstd
 
 umount /mnt
 
-cat > /etc/snapper/configs/container-volumes <<EOF
+cat > /etc/snapper/configs/{{ container-volumes-folder }} <<EOF
 # subvolume to snapshot
-SUBVOLUME="/var/container-volumes"
+SUBVOLUME="/var/{{ container-volumes-folder }}"
 
 # filesystem type
 FSTYPE="btrfs"

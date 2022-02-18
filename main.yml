@@ -10,5 +10,7 @@
 - name: Managing containers on the Magisystem
   hosts: edge
   become: True
+  vars:
+    container-volumes-folder: '/var/{{ container-volumes-folder }}'
   roles:
     - role: edge/containers
