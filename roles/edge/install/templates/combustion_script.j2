@@ -4,11 +4,14 @@
 
 set -ex
 
+# Install docker and docker-compose
+zypper --non-interactive install docker docker-compose
+
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
 # Create User (ignition should set sudo up automatically)
-useradd --create-home {{ edge_install_ansible_user }}
+useradd --create-home -G docker {{ edge_install_ansible_user }}
 SSH_FOLDER="/home/{{ edge_install_ansible_user }}/.ssh"
 mkdir -pm700 "$SSH_FOLDER"
 cat > "$SSH_FOLDER/authorized_keys" <<EOF

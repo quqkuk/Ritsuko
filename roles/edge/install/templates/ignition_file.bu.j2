@@ -13,11 +13,13 @@ storage:
         - number: 4
           resize: True
           size_mib: 0
-#  This doesn't work on MicroOS right now
 #  filesystems:
-#    - device: '/dev/disk/by-partlabel/p.spare'
+#    This doesn't seem to work epic incredible
+#    - device: /dev/disk/by-partlabel/p.lxroot
+#      path: /home
 #      format: btrfs
-#      mount_options: ["compress=zstd"]
+#      wipe_filesystem: False
+#      mount_options: ["subvol=/@/home"]
   files:
     - path: /etc/ssh/sshd_config.d/90-change-port.conf
       overwrite: true
@@ -45,7 +47,13 @@ storage:
           {{ edge_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
 systemd:
   units:
-    - name: podman.socket
+    - name: docker.service
       enabled: true
     - name: sshd.service
       enabled: true
+#passwd:
+#  users:
+#    - name: {{ edge_install_ansible_user }}
+#      ssh_authorized_keys:
+#        - {{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}
+#      groups: ['docker']
