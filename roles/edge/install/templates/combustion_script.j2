@@ -7,6 +7,9 @@ set -ex
 # Install docker and docker-compose
 zypper --non-interactive install docker docker-compose
 
+# Change subuids and subgids
+sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
+
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
@@ -39,14 +42,14 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 mount /dev/disk/by-label/SPARE /mnt
 
 btrfs property set /mnt compression zstd
-btrfs -q subvolume create /mnt/{{ container-volumes-folder }}
-btrfs property set /mnt/{{ container-volumes-folder }} compression zstd
+btrfs -q subvolume create /mnt/{{ container_volumes_folder }}
+btrfs property set /mnt/{{ container_volumes_folder }} compression zstd
 
 umount /mnt
 
-cat > /etc/snapper/configs/{{ container-volumes-folder }} <<EOF
+cat > /etc/snapper/configs/{{ container_volumes_folder }} <<EOF
 # subvolume to snapshot
-SUBVOLUME="/var/{{ container-volumes-folder }}"
+SUBVOLUME="/var/{{ container_volumes_folder }}"
 
 # filesystem type
 FSTYPE="btrfs"
