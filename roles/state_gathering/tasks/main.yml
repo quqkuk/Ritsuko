@@ -7,8 +7,8 @@
         timeout: 10
       register: state_gathering_connection_test_result
 
-    # TODO: Add checks, after instaling the OS the Btrfs subvolume for containers should still be missing
-
+    # TODO: To apply gitops practices, this needs to be true if we're running on the remote host
+    # Either with local or some other plugin
     - name: Setting state variable
       set_fact:
         setup_completed: "{{ state_gathering_connection_test_result is succeeded }}"
