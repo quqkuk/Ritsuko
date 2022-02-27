@@ -4,17 +4,18 @@
 
 set -ex
 
-# Install docker and docker-compose
-zypper --non-interactive install docker docker-compose
-
-# Change subuids and subgids
-sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
+## Install docker and docker-compose
+#zypper --non-interactive install docker docker-compose
+#
+## Change subuids and subgids
+#sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
 
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
 # Create User (ignition should set sudo up automatically)
-useradd --create-home -G docker {{ edge_install_ansible_user }}
+#useradd --create-home -G docker {{ edge_install_ansible_user }}
+useradd --create-home {{ edge_install_ansible_user }}
 SSH_FOLDER="/home/{{ edge_install_ansible_user }}/.ssh"
 mkdir -pm700 "$SSH_FOLDER"
 cat > "$SSH_FOLDER/authorized_keys" <<EOF
@@ -27,8 +28,9 @@ umount /home
 zypper --non-interactive install policycoreutils-python-utils
 # Add port to selinux
 semanage port -a -t ssh_port_t -p tcp {{ edge_install_ansible_port }}
-# Install python for ansible
-zypper --non-interactive install python310
+
+# Install python for ansible and dnsname plugin for containers
+zypper --non-interactive install python310 cni-plugin-dnsname
 
 # Changing logrotate
 sed -i 's/^\(un\)\?compress/#\1compress/' /etc/logrotate.conf

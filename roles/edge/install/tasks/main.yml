@@ -49,7 +49,7 @@
         src: install_ignition.sh
         dest: ./install_ignition.sh
         mode: 0544
-    - name: Run installation script
+    - name: Running installation script
       ansible.builtin.command: './install_ignition.sh /dev/{{ edge_install_installation_drive }}'
       register: edge_install_script_result
       failed_when: edge_install_script_result.rc != 0
