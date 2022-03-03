@@ -109,6 +109,7 @@
           ansible.builtin.template:
             src: ignition_file.bu.j2
             dest: '{{ edge_install_butane_config.path }}'
+            mode: 0444
         # Transpile Butane config to get Ignition json
         - name: Transpiling Butane config
           containers.podman.podman_container:
@@ -164,11 +165,13 @@
 # Reboot to disk (reboots deactivate hetzner's recovery environment)
 # We have a very short timeout and ignore errors because sshd should be listening to another port
 - name: Rebooting to disk
-  ignore_errors: True
   ansible.builtin.reboot:
     msg: ''
     connect_timeout: 1
     reboot_timeout: 1
+  failed_when: False
+  #TODO: Maybe the registered value can let us discern whether we've failed to reboot or not
+  # we don't care about the machine coming up because it may be on a different port
 
 # Turn everything back to normal
 - name: Reapplying ssh config
