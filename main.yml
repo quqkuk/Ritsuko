@@ -9,8 +9,9 @@
 
 - name: Managing containers on the Magisystem
   hosts: edge
-  become: True
   vars:
-    container-volumes-folder: '/var/{{ container-volumes-folder }}'
+    container_volumes_folder: '/var/container-volumes'
+    container_config_folder: '{{ ansible_facts.env.HOME }}/config'
   roles:
-    - role: edge/containers
+    - role: edge/containers/setup
+#    - role: edge/containers/traefik

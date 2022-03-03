@@ -10,10 +10,10 @@
 
 # WARNING: THIS IS STILL UNTESTED, Everything else in this role is known to work but this task
 # TODO: Check whether apt-get is idempotent and returns 0 if package is already installed
-- name: Installing Python
-  ansible.builtin.raw: 'apt-get -y -q update && apt-get -y -q install python3'
-  register: edge_install_install_python_result
-  changed_when: edge_install_install_python_result.rc == 0
+#- name: Installing Python
+#  ansible.builtin.raw: 'apt-get -y -q update && apt-get -y -q install python3'
+#  register: edge_install_install_python_result
+#  changed_when: edge_install_install_python_result.rc == 0
 
 # Gather facts to choose installation drive
 - name: Gathering facts
