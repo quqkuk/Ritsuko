@@ -1,0 +1,44 @@
+providers:
+  docker:
+    network: "traefik"
+    endpoint: "tcp://socket-proxy:2375"
+    exposedByDefault: false
+  file:
+    directory: /etc/traefik/configs
+
+api:
+  dashboard: true
+
+entryPoints:
+  http:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+
+  https:
+    address: ":443"
+    http:
+      tls:
+        certResolver: tls-resolver
+
+  dashboard:
+    address: ":8080"
+
+  vaultwarden-admin:
+    address: ":8081"
+
+  powerdns-admin:
+    address: ":8082"
+
+certificatesResolvers:
+  tls-resolver:
+    acme:
+      email: "quq@magisystem.xyz"
+#      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      tlsChallenge: {}
+
+#log:
+#  level: DEBUG
