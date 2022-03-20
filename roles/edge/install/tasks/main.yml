@@ -109,6 +109,7 @@
           ansible.builtin.template:
             src: ignition_file.bu.j2
             dest: '{{ edge_install_butane_config.path }}'
+            mode: 0644
         # Transpile Butane config to get Ignition json
         - name: Transpiling Butane config
           containers.podman.podman_container:
