@@ -2,7 +2,7 @@
 collections:
   - hetzner.hcloud
   - community.general
-  - containers.podman
+  - community.docker
   - ansible.posix
   - ansible.utils
 
