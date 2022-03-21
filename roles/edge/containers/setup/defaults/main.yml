@@ -1,0 +1,3 @@
+---
+container_volumes_folder: '{{ undef(hint="Folder where the mount binds are stored") }}'
+container_config_folder: '{{ undef(hint="Folder where the configuration files are kept") }}'

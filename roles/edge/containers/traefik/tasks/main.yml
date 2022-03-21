@@ -1,0 +1,46 @@
+---
+- name: Creating traefik config folder
+  ansible.builtin.file:
+    path: '{{ container_config_folder }}/traefik'
+    state: directory
+    mode: 0755
+
+- name: Create socket proxy container
+  community.docker.docker_container:
+    name: traefik-socket-proxy
+    image: tecnativa/docker-socket-proxy
+    pull: True
+    keep_volumes: False
+    userns_mode: host
+    privileged: True
+    restart_policy: unless-stopped
+    mounts:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: True
+    networks:
+      - name: traefik
+    env:
+      CONTAINERS: 1
+
+#  reverse-proxy:
+#    container_name: traefik
+#    image: traefik
+#    depends_on:
+#      - socket-proxy
+#    restart: unless-stopped
+#    networks:
+#      - {{ reverse_proxy_network }}
+#      - default
+#      - outside
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#      - "127.0.0.1:8080:8080"
+#      - "127.0.0.1:8081:8081"
+#      - "127.0.0.1:8082:8082"
+#    volumes:
+#      - "./traefik.yml:/etc/traefik/traefik.yml:ro"
+#      - "./configs:/etc/traefik/configs:ro"
+#      - "$HOME/volumes/traefik/acme.json:/acme.json"
