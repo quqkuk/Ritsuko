@@ -6,41 +6,12 @@
     mode: 0755
     recurse: True
 
-- name: Set up services podman network
-  block:
-    - name: Create services network
-      containers.podman.podman_network:
-        name: '{{ reverse_proxy_network }}'
-        driver: bridge
-        subnet: '{{ reverse_proxy_network_subnet }}'
-        state: present
-      register: edge_containers_setup_network
-
-    - name: Change DNS domain name
-      ansible.builtin.replace:
-        path: '{{ edge_containers_setup_network.stdout_lines[0] }}'
-        after: '"type": "dnsname",'
-        regexp: '"domainName": "[0-9A-z.-]*"'
-        replace: '"domainName": "service"'
-        #validate: 'podman network inspect {{ reverse_proxy_network }}'
-      when: edge_containers_setup_network is changed
-
-      #This should throw in case of bad replacement
-    - name: Gather network info
-      containers.podman.podman_network_info:
-        name: '{{ reverse_proxy_network }}'
-  rescue:
-    - name: Delete services network
-      containers.podman.podman_network:
-        name: '{{ reverse_proxy_network }}'
-        state: absent
-
-    - name: Delete network conflist file
-      ansible.builtin.file:
-        name: '{{ edge_containers_setup_network.stdout_lines[0] }}'
-        state: absent
-      when: edge_containers_setup_network is defined
-
-    - name: Bubble up the error
-      ansible.builtin.fail:
-        msg: 'Bubbling up the error thrown by "{{ ansible_failed_task.name }}"'
+- name: Create services network
+  containers.podman.podman_network:
+    name: '{{ reverse_proxy_network }}'
+    driver: bridge
+    internal: True
+    ipam_config:
+      gateway: '{{ reverse_proxy_network_gateway }}'
+      subnet: '{{ reverse_proxy_network_subnet }}'
+    state: present
