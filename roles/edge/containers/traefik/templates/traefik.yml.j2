@@ -1,6 +1,6 @@
 providers:
   docker:
-    network: "traefik"
+    network: "{{ reverse_proxy_network }}"
     endpoint: "tcp://socket-proxy:2375"
     exposedByDefault: false
   file:
@@ -36,7 +36,7 @@ entryPoints:
 certificatesResolvers:
   tls-resolver:
     acme:
-      email: "quq@magisystem.xyz"
+      email: "{{ certificate_email }}"
 #      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
       tlsChallenge: {}
 

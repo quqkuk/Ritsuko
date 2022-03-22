@@ -1,9 +1,18 @@
 ---
-- name: Creating traefik config folder
+- name: Ensuring traefik config folder exists
   ansible.builtin.file:
-    path: '{{ container_config_folder }}/traefik'
+    path: '{{ traefik_config_folder }}'
     state: directory
     mode: 0755
+
+#TODO: The default network might need to be created here, as well as the "outside" bridge network
+
+- name: Template Traefik's Static Config
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: '{{ traefik_config_folder }}/traefik.yml'
+    mode: 0400
+  register: edge_containers_traefik_static_config
 
 - name: Create socket proxy container
   community.docker.docker_container:
@@ -21,26 +30,40 @@
         read_only: True
     networks:
       - name: traefik
+        aliases:
+          - 'socket-proxy'
     env:
       CONTAINERS: 1
 
+- name: Create reverse proxy container
+  community.docker.docker_container:
+    name: traefik
+    image: traefik
+    pull: True
+    keep_volumes: False
+    restart_policy: unless-stopped
+    restart: '{{ edge_containers_traefik_static_config is changed }}'
+    mounts:
+      - type: bind
+        source: '{{ traefik_config_folder }}/traefik.yml'
+        target: /etc/traefik/traefik.yml
+        read_only: True
+      - type: bind
+        source: '{{ traefik_config_folder }}/configs'
+        target: /etc/traefik/configs
+        read_only: True
+    networks:
+      - name: traefik
+      - name: '{{ reverse_proxy_network }}'
+    published_ports:
+      - '80:80'
+      - '443:443'
+      - '127.0.0.1:8080:8080'
+      - '127.0.0.1:8081:8081'
+      - '127.0.0.1:8082:8082'
+
 #  reverse-proxy:
-#    container_name: traefik
-#    image: traefik
-#    depends_on:
-#      - socket-proxy
-#    restart: unless-stopped
 #    networks:
 #      - {{ reverse_proxy_network }}
 #      - default
 #      - outside
-#    ports:
-#      - "80:80"
-#      - "443:443"
-#      - "127.0.0.1:8080:8080"
-#      - "127.0.0.1:8081:8081"
-#      - "127.0.0.1:8082:8082"
-#    volumes:
-#      - "./traefik.yml:/etc/traefik/traefik.yml:ro"
-#      - "./configs:/etc/traefik/configs:ro"
-#      - "$HOME/volumes/traefik/acme.json:/acme.json"
