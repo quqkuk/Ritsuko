@@ -7,7 +7,7 @@
     recurse: True
 
 - name: Create services network
-  containers.podman.podman_network:
+  community.docker.docker_network:
     name: '{{ reverse_proxy_network }}'
     driver: bridge
     internal: True
