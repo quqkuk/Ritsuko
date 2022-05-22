@@ -5,6 +5,12 @@
     state: directory
     mode: 0755
 
+- name: Ensuring traefik dynamic config folder exists
+  ansible.builtin.file:
+    path: '{{ traefik_config_folder }}/configs'
+    state: directory
+    mode: 0755
+
 #TODO: The default network might need to be created here, as well as the "outside" bridge network
 
 - name: Template Traefik's Static Config
