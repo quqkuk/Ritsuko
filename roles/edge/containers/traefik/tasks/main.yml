@@ -11,7 +11,19 @@
     state: directory
     mode: 0755
 
-#TODO: The default network might need to be created here, as well as the "outside" bridge network
+- name: Create traefik network
+  community.docker.docker_network:
+    name: traefik
+    driver: bridge
+    internal: True
+    state: present
+
+- name: Create traefik-outside network
+  community.docker.docker_network:
+    name: traefik-outside
+    driver: bridge
+    internal: False
+    state: present
 
 - name: Template Traefik's Static Config
   ansible.builtin.template:
@@ -60,6 +72,7 @@
         read_only: True
     networks:
       - name: traefik
+      - name: traefik-outside
       - name: '{{ reverse_proxy_network }}'
     published_ports:
       - '80:80'
