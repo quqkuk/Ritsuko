@@ -3,7 +3,7 @@
   hosts: edge
   gather_facts: false
   roles:
-    - role: state_gathering
+    - role: edge/state_gathering
     - role: edge/install
       when: not (setup_completed | bool)
 
