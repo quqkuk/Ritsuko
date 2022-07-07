@@ -1,4 +1,5 @@
 /*hosts
 /host_vars/*
+/group_vars/edge/acme_credentials.yml
 !/host_vars/.gitkeep
 /ssh_keys
