@@ -12,6 +12,6 @@
     driver: bridge
     internal: True
     ipam_config:
-      gateway: '{{ reverse_proxy_network_gateway }}'
-      subnet: '{{ reverse_proxy_network_subnet }}'
+      - gateway: '{{ reverse_proxy_network_gateway }}'
+        subnet: '{{ reverse_proxy_network_subnet }}'
     state: present
