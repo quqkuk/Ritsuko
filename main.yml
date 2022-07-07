@@ -14,4 +14,4 @@
     container_config_folder: '{{ ansible_facts.env.HOME }}/config'
   roles:
     - role: edge/containers/setup
-#    - role: edge/containers/traefik
+    - role: edge/containers/traefik

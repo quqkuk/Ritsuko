@@ -189,4 +189,4 @@
 # Check if Reboot happened
 - name: SSH Check
   ansible.builtin.wait_for_connection:
-    timeout: 120
+    delay: 30
