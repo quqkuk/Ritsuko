@@ -2,8 +2,7 @@ variant: fcos
 version: 1.4.0
 storage:
   disks:
-    # I hope it stays the same
-    # TODO: The partition numbers could be dynamic
+    # TODO: The partition numbers could be dynamic, hopefully it stays the same
     - device: /dev/{{ edge_install_installation_drive }}
       partitions:
         - number: 5
@@ -13,13 +12,6 @@ storage:
         - number: 4
           resize: True
           size_mib: 0
-#  filesystems:
-#    This doesn't seem to work epic incredible
-#    - device: /dev/disk/by-partlabel/p.lxroot
-#      path: /home
-#      format: btrfs
-#      wipe_filesystem: False
-#      mount_options: ["subvol=/@/home"]
   files:
     - path: /etc/ssh/sshd_config.d/90-change-port.conf
       overwrite: true
@@ -33,6 +25,12 @@ storage:
         inline: |
           # Prohibiting login as root
           PermitRootLogin no
+    - path: /etc/ssh/sshd_config.d/40-allow-tcp-forwarding.conf
+      overwrite: true
+      contents:
+        inline: |
+          # Allow TCP port forwarding
+          AllowTcpForwarding yes
     - path: /etc/ssh/sshd_config.d/40-disable-password-authentication.conf
       overwrite: true
       contents:
@@ -46,12 +44,6 @@ storage:
         inline: |
           # Permit passwordless sudo to {{ edge_install_ansible_user }}
           {{ edge_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
-#    - path: /etc/sysctl.d/10-change-unprivileged-port.conf
-#      overwrite: true
-#      contents:
-#        inline: |
-#          # First unprivileged port is now 20. There's probably no point in lowering it
-#          net.ipv4.ip_unprivileged_port_start = 20
 systemd:
   units:
     - name: docker.service
