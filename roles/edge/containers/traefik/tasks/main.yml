@@ -39,7 +39,7 @@
         aliases:
           - 'socket-proxy'
     env:
-      CONTAINERS: 1
+      CONTAINERS: '1'
 
 - name: Create reverse proxy container
   community.docker.docker_container:
