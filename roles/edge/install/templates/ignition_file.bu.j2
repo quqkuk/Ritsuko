@@ -37,20 +37,21 @@ storage:
       overwrite: true
       contents:
         inline: |
-          # Disable Password Authentication
+          # Disable Password and Challenge Authentication
           PasswordAuthentication no
+          ChallengeResponseAuthentication no
     - path: /etc/sudoers.d/90-permit-user-nopasswd
       overwrite: true
       contents:
         inline: |
           # Permit passwordless sudo to {{ edge_install_ansible_user }}
           {{ edge_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
-    - path: /etc/sysctl.d/10-change-unprivileged-port.conf
-      overwrite: true
-      contents:
-        inline: |
-          # First unprivileged port is now 20. There's probably no point in lowering it
-          net.ipv4.ip_unprivileged_port_start = 20
+#    - path: /etc/sysctl.d/10-change-unprivileged-port.conf
+#      overwrite: true
+#      contents:
+#        inline: |
+#          # First unprivileged port is now 20. There's probably no point in lowering it
+#          net.ipv4.ip_unprivileged_port_start = 20
 systemd:
   units:
     - name: docker.service

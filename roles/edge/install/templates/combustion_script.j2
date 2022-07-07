@@ -14,8 +14,7 @@ sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
 # Create User (ignition should set sudo up automatically)
-#useradd --create-home -G docker {{ edge_install_ansible_user }}
-useradd --create-home {{ edge_install_ansible_user }}
+useradd --create-home -G docker {{ edge_install_ansible_user }}
 SSH_FOLDER="/home/{{ edge_install_ansible_user }}/.ssh"
 mkdir -pm700 "$SSH_FOLDER"
 cat > "$SSH_FOLDER/authorized_keys" <<EOF
@@ -43,12 +42,11 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 # Apparently /dev/disk/by-partlabel/p.spare does not exist
 mount /dev/disk/by-label/SPARE /mnt
 
-btrfs property set /mnt compression zstd
 btrfs -q subvolume create /mnt/container-volumes
-btrfs property set /mnt/container-volumes compression zstd
 
 umount /mnt
 
+#TODO: This should be handled by ignition
 cat > /etc/snapper/configs/container-volumes <<EOF
 # subvolume to snapshot
 SUBVOLUME="/var/container-volumes"
