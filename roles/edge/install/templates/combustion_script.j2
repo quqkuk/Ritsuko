@@ -47,6 +47,7 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 # Apparently /dev/disk/by-partlabel/p.spare does not exist
 mount /dev/disk/by-label/SPARE /mnt
 btrfs -q subvolume create /mnt/container-volumes
+mkdir /mnt/container-volumes/.snapshots
 umount /mnt
 
 #TODO: This should maybe handled by ignition
