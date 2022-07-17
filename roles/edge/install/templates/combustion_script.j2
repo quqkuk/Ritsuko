@@ -23,10 +23,15 @@ EOF
 chown {{ edge_install_ansible_user }}:users -R "$SSH_FOLDER"
 umount /home
 
+#-------- Selinux Section
 # Install semanage
 zypper --non-interactive install policycoreutils-python-utils
 # Add port to selinux
-semanage port -a -t ssh_port_t -p tcp {{ edge_install_ansible_port }}
+semanage port --modify -t ssh_port_t -p tcp {{ edge_install_ansible_port }}
+# TODO: let sshd bind localhost ports for TCP Forwarding
+# TODO: let docker bind any port (maybe we can leave semanage installed and handle this with Ansible on a port by port basis
+# Uninstall semanage
+zypper --non-interactive remove policycoreutils-python-utils
 
 # Install python for ansible
 zypper --non-interactive install python310
