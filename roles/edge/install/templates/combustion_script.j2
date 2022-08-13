@@ -34,7 +34,7 @@ semanage port --add -t ssh_port_t -p tcp {{ edge_install_ansible_port }}
 zypper --non-interactive remove policycoreutils-python-utils
 
 # Install python for ansible
-zypper --non-interactive install python310
+zypper --non-interactive install python3 python3-docker
 
 # Changing logrotate
 printf 'nocompress\n' > /etc/logrotate.conf
