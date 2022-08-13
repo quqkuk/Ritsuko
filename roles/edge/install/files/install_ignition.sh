@@ -14,7 +14,7 @@ rm "$TMPIMG"
 sgdisk -e "$1"
 
 # Gather disk data
-PARTED_OUTPUT=$(parted -s /dev/vdb unit MB print | tail -n2 | head -n1 | tr -s ' ')
+PARTED_OUTPUT=$(parted -s "$1" unit MB print | tail -n2 | head -n1 | tr -s ' ')
 PART_NUMBER=$(printf "$PARTED_OUTPUT" | cut -d ' ' -f 2)
 
 # Shrink filesystem
