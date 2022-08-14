@@ -1,0 +1,21 @@
+
+module sshd_local_tcp_forwarding 1.0;
+
+require {
+	attribute reserved_port_type;
+	attribute unreserved_port_type;
+	type sshd_t;
+	class tcp_socket name_connect;
+}
+
+#============= sshd_t ==============
+bool sshd_connect_to_reserved_ports false;
+bool sshd_connect_to_unreserved_ports false;
+
+if(sshd_connect_to_reserved_ports){
+  allow sshd_t reserved_port_type:tcp_socket name_connect;
+}
+
+if(sshd_connect_to_unreserved_ports){
+  allow sshd_t unreserved_port_type:tcp_socket name_connect;
+}
