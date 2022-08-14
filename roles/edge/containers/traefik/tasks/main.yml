@@ -25,6 +25,7 @@
     internal: false
     state: present
 
+#TODO: Template and then check whether copying is needed
 - name: Template Traefik's Static Config
   ansible.builtin.template:
     src: traefik.yml.j2
@@ -32,6 +33,7 @@
     mode: 0400
   register: edge_containers_traefik_static_config
 
+#TODO: Copy only what's needed
 - name: Copy Traefik's dynamic file configs
   ansible.builtin.copy:
     src: configs/
