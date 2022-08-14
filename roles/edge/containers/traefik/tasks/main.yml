@@ -32,6 +32,12 @@
     mode: 0400
   register: edge_containers_traefik_static_config
 
+- name: Copy Traefik's dynamic file configs
+  ansible.builtin.copy:
+    src: configs/
+    dest: '{{ traefik_config_folder }}/configs'
+    mode: 0600
+
 - name: Create socket proxy container
   community.docker.docker_container:
     name: traefik-socket-proxy
