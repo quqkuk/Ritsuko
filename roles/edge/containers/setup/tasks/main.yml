@@ -4,13 +4,13 @@
     path: '{{ container_config_folder }}'
     state: directory
     mode: 0755
-    recurse: True
+    recurse: true
 
 - name: Create services network
   community.docker.docker_network:
     name: '{{ reverse_proxy_network }}'
     driver: bridge
-    internal: True
+    internal: true
     ipam_config:
       - gateway: '{{ reverse_proxy_network_gateway }}'
         subnet: '{{ reverse_proxy_network_subnet }}'

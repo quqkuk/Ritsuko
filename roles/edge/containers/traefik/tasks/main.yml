@@ -15,14 +15,14 @@
   community.docker.docker_network:
     name: traefik
     driver: bridge
-    internal: True
+    internal: true
     state: present
 
 - name: Create traefik-outside network
   community.docker.docker_network:
     name: traefik-outside
     driver: bridge
-    internal: False
+    internal: false
     state: present
 
 - name: Template Traefik's Static Config
@@ -42,16 +42,16 @@
   community.docker.docker_container:
     name: traefik-socket-proxy
     image: tecnativa/docker-socket-proxy
-    pull: True
-    keep_volumes: False
+    pull: true
+    keep_volumes: false
     userns_mode: host
-    privileged: True
+    privileged: true
     restart_policy: unless-stopped
     mounts:
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock
-        read_only: True
+        read_only: true
     networks:
       - name: traefik
         aliases:
@@ -63,19 +63,19 @@
   community.docker.docker_container:
     name: traefik
     image: traefik
-    pull: True
-    keep_volumes: False
+    pull: true
+    keep_volumes: false
     restart_policy: unless-stopped
     restart: '{{ edge_containers_traefik_static_config is changed }}'
     mounts:
       - type: bind
         source: '{{ traefik_config_folder }}/traefik.yml'
         target: /etc/traefik/traefik.yml
-        read_only: True
+        read_only: true
       - type: bind
         source: '{{ traefik_config_folder }}/configs'
         target: /etc/traefik/configs
-        read_only: True
+        read_only: true
     networks:
       - name: traefik
       - name: traefik-outside

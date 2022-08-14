@@ -39,11 +39,12 @@
 
 - name: Stop before installation
   ansible.builtin.pause:
-    echo: False
+    echo: false
     prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device /dev/{{ edge_install_installation_drive }}'
     seconds: 10
 
-- block:
+- name: Downloading and installing OS to disc
+  block:
     - name: Sending installation script
       ansible.builtin.copy:
         src: install_ignition.sh
@@ -85,11 +86,12 @@
     opts: -L ignition
     state: present
 
-- block:
+- name: Installing Ignition and Combustion configs
+  block:
     # Mount config partition
     - name: Mounting the last partition
       ansible.posix.mount:
-        boot: False
+        boot: false
         src: '/dev/{{ edge_install_ignition_partition }}'
         fstype: ext4
         path: /mnt/ignition
@@ -113,9 +115,9 @@
         # Transpile Butane config to get Ignition json
         - name: Transpiling Butane config
           containers.podman.podman_container:
-            interactive: True
-            detach: False
-            rm: True
+            interactive: true
+            detach: false
+            rm: true
             image: quay.io/coreos/butane:release
             volume:
               - '{{ edge_install_butane_config.path }}:/config.bu'
@@ -158,7 +160,7 @@
     # Unmount the config partition if mounted
     - name: Unmounting the last partition
       ansible.posix.mount:
-        boot: False
+        boot: false
         path: /mnt/ignition
         state: absent
 
@@ -169,7 +171,7 @@
     msg: ''
     connect_timeout: 1
     reboot_timeout: 1
-  failed_when: False
+  failed_when: false
   #TODO: Maybe the registered value can let us discern whether we've failed to reboot or not
   # we don't care about the machine coming up because it may be on a different port
 
