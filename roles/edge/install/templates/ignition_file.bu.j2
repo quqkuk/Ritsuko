@@ -31,6 +31,12 @@ storage:
         inline: |
           # Allow TCP port forwarding
           AllowTcpForwarding yes
+          # Disabling Remote forwarding
+          PermitListen none
+          # Enabling forwarding only to loopback
+          PermitOpen localhost:*
+          PermitOpen 127.0.0.1:*
+          PermitOpen [::1]:*
     - path: /etc/ssh/sshd_config.d/40-disable-password-authentication.conf
       overwrite: true
       contents:
