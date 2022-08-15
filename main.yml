@@ -1,17 +1,28 @@
 ---
-- name: Setting up the Magisystem
-  hosts: edge
+- name: Installing OS to the Magisystem
+  hosts: hetzner
   gather_facts: false
+  pre_tasks:
+    # Check for connection, fail if accessible through custom port and username, meaning that the OS is already installed
+    - name: Checking connection
+      ansible.builtin.wait_for_connection:
+        timeout: 10
+      failed_when
+      vars:
+        ansible_user: '{{hetzner_install_ansible_user}}'
+        ansible_port: '{{hetzner_install_ansible_port}}'
   roles:
-    - role: edge/state_gathering
-    - role: edge/install
-      when: not (setup_completed | bool)
+    - role: hetzner/install
 
 - name: Managing containers on the Magisystem
   hosts: edge
   vars:
     container_volumes_folder: '/var/container-volumes'
     container_config_folder: '{{ ansible_facts.env.HOME }}/config'
+# pre_tasks:
+#   # Check if Reboot happened
+#   - name: SSH Check
+#     ansible.builtin.wait_for_connection: {}
   roles:
-    - role: edge/containers/setup
-    - role: edge/containers/traefik
+    - role: edge/setup
+    - role: edge/traefik

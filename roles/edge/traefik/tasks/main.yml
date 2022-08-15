@@ -34,6 +34,7 @@
   register: edge_containers_traefik_static_config
 
 #TODO: Copy only what's needed
+#TODO: Consider using rsync
 - name: Copy Traefik's dynamic file configs
   ansible.builtin.copy:
     src: configs/

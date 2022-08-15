@@ -1,46 +1,44 @@
 ---
+# This should not run if the VM is not available on the default port, as the fact gathering fails
+# thus, we can proceed with putting the VM in recovery mode without worrying that the OS will be re-installed even if not needed
+
 # TODO: Upload ssh key and put machine in recovery with hetzner hcloud
-# Change port and user to hetzner recovery's defaults
-- name: Changing to default ssh parameters
-  ansible.builtin.set_fact:
-    edge_install_ansible_port: '{{ ansible_port }}'
-    edge_install_ansible_user: '{{ ansible_user }}'
-    ansible_port: 22
-    ansible_user: root
 
 # WARNING: THIS IS STILL UNTESTED, Everything else in this role is known to work but this task
 # TODO: Check whether apt-get is idempotent and returns 0 if package is already installed
 #- name: Installing Python
 #  ansible.builtin.raw: 'apt-get -y -q update && apt-get -y -q install python3'
-#  register: edge_install_install_python_result
-#  changed_when: edge_install_install_python_result.rc == 0
+#  register: hetzner_install_install_python_result
+#  changed_when: hetzner_install_install_python_result.rc == 0
+#  failed_when: hetzner_install_install_python_result.rc != 0
 
-# Gather facts to choose installation drive
+# Gather recovery mode facts to choose installation drive
 - name: Gathering facts
   ansible.builtin.setup: {}
 
 # Choose the first drive that isn't mounted
 - name: Choosing installation drive
   ansible.builtin.set_fact:
-    edge_install_installation_drive: '{{ item }}'
+    hetzner_install_installation_drive: '{{ item }}'
   loop: '{{ non_removable_devices }}'
   # Set Fact runs only if the variable has not been defined and if the list of indices returned by index_of is empty
   when: >
-    edge_install_installation_drive is undefined and
+    hetzner_install_installation_drive is undefined and
     (mounted_partitions | ansible.utils.index_of('search', item, fail_on_missing=False, wantlist=True) | length) == 0
   vars:
     mounted_partitions: '{{ ansible_facts.mounts | map(attribute="device") | unique }}'
     non_removable_devices: '{{ ansible_facts.devices | dict2items | rejectattr("value.removable", "truthy", convert_bool=True) | map(attribute="key") | sort }}'
 
+#TODO: Turn this into a failed_when on the previous task
 - name: Fail if we couldn't find an installation drive
   ansible.builtin.fail:
     msg: 'Couldn''t find an installation drive among {{ ansible_facts.devices.keys() | list }}'
-  when: edge_install_installation_drive is undefined
+  when: hetzner_install_installation_drive is undefined
 
 - name: Stop before installation
   ansible.builtin.pause:
     echo: false
-    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device /dev/{{ edge_install_installation_drive }}'
+    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device /dev/{{ hetzner_install_installation_drive }}'
     seconds: 10
 
 - name: Downloading and installing OS to disc
@@ -51,15 +49,15 @@
         dest: ./install_ignition.sh
         mode: 0544
     - name: Running installation script
-      ansible.builtin.command: './install_ignition.sh /dev/{{ edge_install_installation_drive }}'
-      register: edge_install_script_result
-      failed_when: edge_install_script_result.rc != 0
-      changed_when: edge_install_script_result.rc == 0
+      ansible.builtin.command: './install_ignition.sh /dev/{{ hetzner_install_installation_drive }}'
+      register: hetzner_install_script_result
+      failed_when: hetzner_install_script_result.rc != 0
+      changed_when: hetzner_install_script_result.rc == 0
   always:
     - name: Show command result
       ansible.builtin.debug:
-        msg: '{{ edge_install_script_result is succeeded | ternary(edge_install_script_result.stdout_lines, edge_install_script_result.stderr_lines) }}'
-      when: edge_install_script_result is defined
+        msg: '{{ hetzner_install_script_result is succeeded | ternary(hetzner_install_script_result.stdout_lines, hetzner_install_script_result.stderr_lines) }}'
+      when: hetzner_install_script_result is defined
     # Remove script if sent
     - name: Removing installation script file
       ansible.builtin.file:
@@ -73,15 +71,16 @@
       - hardware
 
 # The partition should have been created by install_ignition.sh
+#TODO: use negative index instead of subtracting length
 - name: Choose config partition
   ansible.builtin.set_fact:
-    edge_install_ignition_partition: '{{ partitions[(partitions | length) - 1] }}'
+    hetzner_install_ignition_partition: '{{ partitions[(partitions | length) - 1] }}'
   vars:
-    partitions: '{{ ansible_facts.devices[edge_install_installation_drive].partitions.keys() | sort }}'
+    partitions: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions.keys() | sort }}'
 
 - name: Formatting the config partition
   community.general.filesystem:
-    dev: '/dev/{{ edge_install_ignition_partition }}'
+    dev: '/dev/{{ hetzner_install_ignition_partition }}'
     fstype: ext4
     opts: -L ignition
     state: present
@@ -92,7 +91,7 @@
     - name: Mounting the last partition
       ansible.posix.mount:
         boot: false
-        src: '/dev/{{ edge_install_ignition_partition }}'
+        src: '/dev/{{ hetzner_install_ignition_partition }}'
         fstype: ext4
         path: /mnt/ignition
         state: mounted
@@ -106,11 +105,11 @@
         - name: Creating temporary file to host templated config
           ansible.builtin.tempfile:
             suffix: '.bu'
-          register: edge_install_butane_config
+          register: hetzner_install_butane_config
         - name: Templating Butane config
           ansible.builtin.template:
             src: ignition_file.bu.j2
-            dest: '{{ edge_install_butane_config.path }}'
+            dest: '{{ hetzner_install_butane_config.path }}'
             mode: 0444
         # Transpile Butane config to get Ignition json
         - name: Transpiling Butane config
@@ -120,17 +119,17 @@
             rm: true
             image: quay.io/coreos/butane:release
             volume:
-              - '{{ edge_install_butane_config.path }}:/config.bu'
+              - '{{ hetzner_install_butane_config.path }}:/config.bu'
             command: '--strict /config.bu'
             name: butane
-          register: edge_install_ignition_config
+          register: hetzner_install_ignition_config
       always:
         # Remove temporary file if created
         - name: Removing temporary files
           ansible.builtin.file:
-            path: '{{ edge_install_butane_config.path }}'
+            path: '{{ hetzner_install_butane_config.path }}'
             state: absent
-          when: edge_install_butane_config is defined
+          when: hetzner_install_butane_config is defined
 
     - name: Create ignition folder
       ansible.builtin.file:
@@ -141,7 +140,7 @@
     # Write the ignition config in /ignition/config.ign
     - name: Writing ignition config
       ansible.builtin.copy:
-        content: '{{ edge_install_ignition_config.stdout | string }}'
+        content: '{{ hetzner_install_ignition_config.stdout | string }}'
         dest: /mnt/ignition/ignition/config.ign
         mode: 0644
 
@@ -165,21 +164,15 @@
         state: absent
 
 # Reboot to disk (reboots deactivate hetzner's recovery environment)
-# We have a very short timeout and ignore errors because sshd should be listening to another port
+# We have a very short timeout and ignore errors because sshd may be listening to another port
 - name: Rebooting to disk
   ansible.builtin.reboot:
-    msg: ''
+    msg: 'Rebooting to disk'
     connect_timeout: 1
     reboot_timeout: 1
-  failed_when: false
+  ignore_errors: true
   #TODO: Maybe the registered value can let us discern whether we've failed to reboot or not
   # we don't care about the machine coming up because it may be on a different port
-
-# Turn everything back to normal
-- name: Reapplying ssh config
-  ansible.builtin.set_fact:
-    ansible_port: '{{ edge_install_ansible_port }}'
-    ansible_user: '{{ edge_install_ansible_user }}'
 
 - name: Remove host from Controller's known hosts
   delegate_to: localhost
@@ -187,7 +180,3 @@
   ansible.builtin.known_hosts:
     name: '{{ ansible_host }}'
     state: absent
-
-# Check if Reboot happened
-- name: SSH Check
-  ansible.builtin.wait_for_connection: {}

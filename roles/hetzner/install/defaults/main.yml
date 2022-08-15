@@ -1,0 +1,4 @@
+---
+hetzner_install_ansible_user: '{{ undef(hint="Username for the user to be created") }}'
+ansible_ssh_private_key_file: '{{ undef(hint="Path to the ssh private key file") }}'
+hetzner_install_ansible_port: '{{ undef(hint="New ssh port") }}'
