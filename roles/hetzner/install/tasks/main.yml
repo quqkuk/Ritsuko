@@ -173,10 +173,3 @@
   ignore_errors: true
   #TODO: Maybe the registered value can let us discern whether we've failed to reboot or not
   # we don't care about the machine coming up because it may be on a different port
-
-- name: Remove host from Controller's known hosts
-  delegate_to: localhost
-  connection: local
-  ansible.builtin.known_hosts:
-    name: '{{ ansible_host }}'
-    state: absent

@@ -3,26 +3,44 @@
   hosts: hetzner
   gather_facts: false
   pre_tasks:
-    # Check for connection, fail if accessible through custom port and username, meaning that the OS is already installed
+    # Check for connection, skip the play if the OS is already installed
+    # (and thus the server is accessible through custom port and username)
     - name: Checking connection
       ansible.builtin.wait_for_connection:
         timeout: 10
-      failed_when
-      vars:
-        ansible_user: '{{hetzner_install_ansible_user}}'
-        ansible_port: '{{hetzner_install_ansible_port}}'
+      register: hetzner_connected
+      ignore_errors: true
+
+    - name: Skip play if OS is already installed
+      ansible.builtin.meta: end_host
+      when: hetzner_connected is not failed
+
+    - name: Setting default ssh port and username
+      ansible.builtin.set_fact:
+        ansible_port: 22
+        ansible_user: root
   roles:
     - role: hetzner/install
+  tasks:
+    - name: Remove host from Controller's known hosts
+      delegate_to: localhost
+      connection: local
+      ansible.builtin.known_hosts:
+        name: '{{ ansible_host }}'
+        state: absent
+    - name: Restoring port and username
+      ansible.builtin.set_fact:
+        ansible_port: '{{ hetzner_install_ansible_port }}'
+        ansible_user: '{{ hetzner_install_ansible_user }}'
+    #TODO: Fix this
+    #- name: Waiting for server to come back up online after reboot
+    #  ansible.builtin.wait_for_connection: {}
 
 - name: Managing containers on the Magisystem
   hosts: edge
   vars:
     container_volumes_folder: '/var/container-volumes'
     container_config_folder: '{{ ansible_facts.env.HOME }}/config'
-# pre_tasks:
-#   # Check if Reboot happened
-#   - name: SSH Check
-#     ansible.builtin.wait_for_connection: {}
   roles:
     - role: edge/setup
     - role: edge/traefik

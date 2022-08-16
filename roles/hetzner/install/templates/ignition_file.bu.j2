@@ -3,7 +3,7 @@ version: 1.4.0
 storage:
   disks:
     # TODO: The partition numbers could be dynamic, hopefully it stays the same
-    - device: /dev/{{ edge_install_installation_drive }}
+    - device: /dev/{{ hetzner_install_installation_drive }}
       partitions:
         - number: 5
           wipe_partition_entry: True
@@ -18,7 +18,7 @@ storage:
       contents:
         inline: |
           # Changing the ssh port
-          Port {{ edge_install_ansible_port }}
+          Port {{ hetzner_install_ansible_port }}
     - path: /etc/ssh/sshd_config.d/40-prohibit-root-login.conf
       overwrite: true
       contents:
@@ -48,8 +48,8 @@ storage:
       overwrite: true
       contents:
         inline: |
-          # Permit passwordless sudo to {{ edge_install_ansible_user }}
-          {{ edge_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
+          # Permit passwordless sudo to {{ hetzner_install_ansible_user }}
+          {{ hetzner_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
 systemd:
   units:
     - name: docker.service
@@ -58,7 +58,7 @@ systemd:
       enabled: true
 #passwd:
 #  users:
-#    - name: {{ edge_install_ansible_user }}
+#    - name: {{ hetzner_install_ansible_user }}
 #      ssh_authorized_keys:
 #        - {{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}
 #      groups: ['docker']

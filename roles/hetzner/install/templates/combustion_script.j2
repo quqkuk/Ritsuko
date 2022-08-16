@@ -14,20 +14,20 @@ sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
 # Create User (ignition should set sudo up automatically)
-useradd --create-home -G docker {{ edge_install_ansible_user }}
-SSH_FOLDER="/home/{{ edge_install_ansible_user }}/.ssh"
+useradd --create-home -G docker {{ hetzner_install_ansible_user }}
+SSH_FOLDER="/home/{{ hetzner_install_ansible_user }}/.ssh"
 mkdir -pm700 "$SSH_FOLDER"
 cat > "$SSH_FOLDER/authorized_keys" <<EOF
 {{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}
 EOF
-chown {{ edge_install_ansible_user }}:users -R "$SSH_FOLDER"
+chown {{ hetzner_install_ansible_user }}:users -R "$SSH_FOLDER"
 umount /home
 
 #-------- Selinux Section
 # Install semanage
 zypper --non-interactive install policycoreutils-python-utils
 # Add port to selinux
-semanage port --add -t ssh_port_t -p tcp {{ edge_install_ansible_port }}
+semanage port --add -t ssh_port_t -p tcp {{ hetzner_install_ansible_port }}
 # TODO: let sshd bind localhost ports for TCP Forwarding
 # TODO: let docker bind any port (maybe we can leave semanage installed and handle this with Ansible on a port by port basis
 # Uninstall semanage
