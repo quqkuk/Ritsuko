@@ -40,7 +40,13 @@
   hosts: edge
   vars:
     container_volumes_folder: '/var/container-volumes'
-    container_config_folder: '{{ ansible_facts.env.HOME }}/config'
+    container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
   roles:
     - role: edge/setup
     - role: edge/traefik
+    #- role: edge/mailu
+    #- role: edge/authentik
+    #- role: edge/nextcloud
+    #- role: edge/bitwarden
+    #- role: edge/firefox-sync
+    #- role: edge/diun

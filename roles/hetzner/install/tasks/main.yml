@@ -38,7 +38,7 @@
 - name: Stop before installation
   ansible.builtin.pause:
     echo: false
-    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device /dev/{{ hetzner_install_installation_drive }}'
+    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device {{ ("/dev/", hetzner_install_installation_drive) | path_join }}'
     seconds: 10
 
 - name: Downloading and installing OS to disc
@@ -49,7 +49,7 @@
         dest: ./install_ignition.sh
         mode: 0544
     - name: Running installation script
-      ansible.builtin.command: './install_ignition.sh /dev/{{ hetzner_install_installation_drive }}'
+      ansible.builtin.command: './install_ignition.sh {{ ("/dev/", hetzner_install_installation_drive) | path_join }}'
       register: hetzner_install_script_result
       failed_when: hetzner_install_script_result.rc != 0
       changed_when: hetzner_install_script_result.rc == 0
@@ -80,7 +80,7 @@
 
 - name: Formatting the config partition
   community.general.filesystem:
-    dev: '/dev/{{ hetzner_install_ignition_partition }}'
+    dev: '{{ ("/dev/", hetzner_install_ignition_partition) | path_join }}'
     fstype: ext4
     opts: -L ignition
     state: present
@@ -91,7 +91,7 @@
     - name: Mounting the last partition
       ansible.posix.mount:
         boot: false
-        src: '/dev/{{ hetzner_install_ignition_partition }}'
+        src: '{{ ("/dev/", hetzner_install_ignition_partition) | path_join }}'
         fstype: ext4
         path: /mnt/ignition
         state: mounted

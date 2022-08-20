@@ -15,7 +15,7 @@ mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
 # Create User (ignition should set sudo up automatically)
 useradd --create-home -G docker {{ hetzner_install_ansible_user }}
-SSH_FOLDER="/home/{{ hetzner_install_ansible_user }}/.ssh"
+SSH_FOLDER="{{ ("/home/", hetzner_install_ansible_user, ".ssh") | path_join }}"
 mkdir -pm700 "$SSH_FOLDER"
 cat > "$SSH_FOLDER/authorized_keys" <<EOF
 {{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}

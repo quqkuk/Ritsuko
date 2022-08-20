@@ -3,7 +3,7 @@ version: 1.4.0
 storage:
   disks:
     # TODO: The partition numbers could be dynamic, hopefully it stays the same
-    - device: /dev/{{ hetzner_install_installation_drive }}
+    - device: {{ ("/dev/", hetzner_install_installation_drive) | path_join }}
       partitions:
         - number: 5
           wipe_partition_entry: True
