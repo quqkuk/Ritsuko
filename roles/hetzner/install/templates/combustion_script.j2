@@ -23,21 +23,16 @@ EOF
 chown {{ hetzner_install_ansible_user }}:users -R "$SSH_FOLDER"
 umount /home
 
-#-------- Selinux Section
+#-------- Selinux
 # Install semanage
 zypper --non-interactive install policycoreutils-python-utils
 # Add port to selinux
 semanage port --add -t ssh_port_t -p tcp {{ hetzner_install_ansible_port }}
-# TODO: let sshd bind localhost ports for TCP Forwarding
-# TODO: let docker bind any port (maybe we can leave semanage installed and handle this with Ansible on a port by port basis
 # Uninstall semanage
 zypper --non-interactive remove policycoreutils-python-utils
 
 # Install python for ansible
 zypper --non-interactive install python3 python3-docker
-
-# Changing logrotate
-printf 'nocompress\n' >> /etc/logrotate.conf
 
 # Changing GRUB Timeout
 sed -i '/^GRUB_TIMEOUT=/s/\([0-9]\+\)$/2/' /etc/default/grub
@@ -49,63 +44,5 @@ mount /dev/disk/by-label/SPARE /mnt
 btrfs -q subvolume create /mnt/container-volumes
 mkdir /mnt/container-volumes/.snapshots
 umount /mnt
-
-#TODO: This should maybe handled by ignition
-cat > /etc/snapper/configs/container-volumes <<EOF
-# subvolume to snapshot
-SUBVOLUME="/var/container-volumes"
-
-# filesystem type
-FSTYPE="btrfs"
-
-# btrfs qgroup for space aware cleanup algorithms
-#QGROUP=""
-
-# fraction of the filesystems space the snapshots may use
-SPACE_LIMIT="0.5"
-
-# fraction of the filesystems space that should be free
-FREE_LIMIT="0.2"
-
-# users and groups allowed to work with config
-ALLOW_USERS=""
-ALLOW_GROUPS=""
-
-# sync users and groups from ALLOW_USERS and ALLOW_GROUPS to .snapshots
-# directory
-SYNC_ACL="no"
-
-# start comparing pre- and post-snapshot in background after creating
-# post-snapshot
-BACKGROUND_COMPARISON="yes"
-
-# run daily number cleanup
-NUMBER_CLEANUP="yes"
-
-# limit for number cleanup
-NUMBER_MIN_AGE="0"
-NUMBER_LIMIT="10"
-NUMBER_LIMIT_IMPORTANT="10"
-
-# create hourly snapshots
-TIMELINE_CREATE="yes"
-
-# cleanup hourly snapshots after some time
-TIMELINE_CLEANUP="yes"
-
-# limits for timeline cleanup
-TIMELINE_MIN_AGE="1800"
-TIMELINE_LIMIT_HOURLY="5"
-TIMELINE_LIMIT_DAILY="10"
-TIMELINE_LIMIT_WEEKLY="0"
-TIMELINE_LIMIT_MONTHLY="2"
-TIMELINE_LIMIT_YEARLY="0"
-
-# cleanup empty pre-post-pairs
-EMPTY_PRE_POST_CLEANUP="yes"
-
-# limits for empty pre-post-pair cleanup
-EMPTY_PRE_POST_MIN_AGE="0"
-EOF
 
 sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/snapper
