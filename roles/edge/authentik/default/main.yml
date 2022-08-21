@@ -1,0 +1,18 @@
+---
+authentik_secret_key: '{{ undef(hint="Secret key for authentik") }}'
+authentik_database_pass: '{{ undef(hint="Password for authentik's PostgreSQL instance") }}'
+authentik_data_folder: '{{ (container_volumes_folder | mandatory, "authentik") | path_join }}/'
+authentik_email:
+  # SMTP Host Emails are sent to
+  host: '{{ default(omit) }}'
+  port: '{{ default(omit) }}'
+  # Optionally authenticate (don't add quotation marks to you password)
+  username: '{{ default(omit) }}'
+  password: '{{ default(omit) }}'
+  # Use StartTLS
+  use_tls: '{{ default(omit) }}'
+  # Use SSL
+  use_ssl: '{{ default(omit) }}'
+  timeout: '{{ default(omit) }}'
+  # Email address authentik will send from, should have a correct @domain
+  from: '{{ default(omit) }}'

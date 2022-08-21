@@ -1,0 +1,155 @@
+---
+- name: Ensuring data folder exists
+  ansible.builtin.file:
+    path: '{{ authentik_data_folder }}'
+    state: directory
+    mode: 0700
+    recurse: true
+
+- name: Create authentik network exists
+  community.docker.docker_network:
+    name: authentik
+    driver: bridge
+    internal: true
+    state: present
+
+#- name: Create authentik-outside network
+#  community.docker.docker_network:
+#    name: authentik-outside
+#    driver: bridge
+#    internal: false
+#    state: present
+
+- name: Create Redis container
+  community.docker.docker_container:
+    name: authentik-redis
+    image: redis:alpine
+    restart_policy: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    keep_volumes: false
+    networks:
+      - name: authentik
+        aliases:
+          - 'redis'
+
+- name: Create PostgreSQL container
+  community.docker.docker_container:
+    name: authentik-database
+    image: postgres:12-alpine
+    restart_policy: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    keep_volumes: false
+    environment:
+      POSTGRES_PASSWORD: '{{ authentik_database_pass }}'
+      POSTGRES_USER: authentik
+      POSTGRES_DB: authentik
+    mounts:
+      - type: bind
+        source: '{{ (authentik_data_folder, "data") | path_join }}'
+        target: /var/lib/postgresql/data
+    networks:
+      - name: authentik
+        aliases:
+          - 'database'
+
+#TODO: If this works, then privileged is not needed and the flag should be removed from traefik's socket proxy container
+- name: Create socket proxy container
+  community.docker.docker_container:
+    name: authentik-socket-proxy
+    image: tecnativa/docker-socket-proxy
+    keep_volumes: false
+    userns_mode: host
+    user: root
+    restart_policy: unless-stopped
+    mounts:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    networks:
+      - name: authentik
+        aliases:
+          - 'socket-proxy'
+    env:
+      CONTAINERS: 1
+      IMAGES: 1
+
+- name: Create Authentik worker container
+  community.docker.docker_container:
+    name: authentik
+    image: ghcr.io/goauthentik/server
+    command: worker
+    keep_volumes: false
+    restart_policy: unless-stopped
+    ## This is optional, and can be removed. If you remove this, the following will happen
+    ## - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
+    ## - The docker socket can't be accessed anymore
+    #user: root
+    env: *authentik-env
+    networks:
+      - name: authentik
+        aliases:
+          - 'worker'
+    mounts:
+      - type: bind
+        source: '{{ (authentik_data_folder, "media") | path_join }}'
+        target: /media
+      - type: bind
+        source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
+        target: /templates
+      - type: bind
+        source: '{{ (authentik_data_folder, "certs") | path_join }}'
+        target: /certs
+
+- name: Create Authentik container
+  community.docker.docker_container:
+    name: authentik
+    image: ghcr.io/goauthentik/server
+    command: server
+    keep_volumes: false
+    restart_policy: unless-stopped
+    env: &authentik-env
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: database
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: '{{ authentik_database_pass }}'
+      AUTHENTIK_SECRET_KEY: '{{ authentik_secret_key }}'
+      AUTHENTIK_EMAIL__HOST: '{{ authentik_email["host"] | default(omit) }}'
+      AUTHENTIK_EMAIL__PORT: '{{ authentik_email["port"] | default(omit) }}'
+      AUTHENTIK_EMAIL__USERNAME: '{{ authentik_email["username"] | default(omit) }}'
+      AUTHENTIK_EMAIL__PASSWORD: '{{ authentik_email["password"] | default(omit) }}'
+      AUTHENTIK_EMAIL__USE_TLS: '{{ authentik_email["use_tls"] | default(omit) }}'
+      AUTHENTIK_EMAIL__USE_SSL: '{{ authentik_email["use_ssl"] | default(omit) }}'
+      AUTHENTIK_EMAIL__TIMEOUT: '{{ authentik_email["timeout"] | default(omit) }}'
+      AUTHENTIK_EMAIL__FROM= '{{ authentik_email["from"] | default(omit) }}'
+      #AUTHENTIK_PORT_HTTP=80
+      #AUTHENTIK_PORT_HTTPS=443
+      AUTHENTIK_ERROR_REPORTING__ENABLED: false
+    networks:
+      - name: authentik
+        aliases:
+          - 'authentik'
+      - name: traefik
+        aliases:
+          - 'authentik'
+    mounts:
+      - type: bind
+        source: '{{ (authentik_data_folder, "media") | path_join }}'
+        target: /media
+      - type: bind
+        source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
+        target: /templates
+    #ports:
+    #  - 9000:9000
+    #  - 9443:9443
