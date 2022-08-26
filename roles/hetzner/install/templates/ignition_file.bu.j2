@@ -8,10 +8,11 @@ storage:
         - number: 5
           should_exist: False
           wipe_partition_entry: True
-        # We use /var to host the container volumes subvolume
-        - number: 4
+				# TODO: Verify partition expansion
+        - number: 3
           resize: True
           size_mib: 0
+				# TODO: Create SWAP Partition
   files:
     - path: /etc/ssh/sshd_config.d/90-change-port.conf
       overwrite: true

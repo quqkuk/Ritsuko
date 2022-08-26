@@ -4,8 +4,8 @@
 
 set -ex
 
-## Install docker and docker-compose
-zypper --non-interactive install docker docker-compose
+# Install docker docker-compose, python (for ansible) and selinux management tools
+zypper --non-interactive install docker docker-compose python3 python3-docker policycoreutils-python-utils
 
 ## Change subuids and subgids
 sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
@@ -17,90 +17,86 @@ mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 useradd --create-home -G docker {{ hetzner_install_ansible_user }}
 SSH_FOLDER="{{ ("/home/", hetzner_install_ansible_user, ".ssh") | path_join }}"
 mkdir -pm700 "$SSH_FOLDER"
-cat > "$SSH_FOLDER/authorized_keys" <<EOF
+cat > "{{ ("/home/", hetzner_install_ansible_user, ".ssh", "authorized_keys") | path_join }}" <<EOF
 {{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}
 EOF
-chown {{ hetzner_install_ansible_user }}:users -R "$SSH_FOLDER"
-umount /home
+chown -R --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SSH_FOLDER"
 
 #-------- Selinux
-# Install semanage
-zypper --non-interactive install policycoreutils-python-utils
 # Add port to selinux
 semanage port --add -t ssh_port_t -p tcp {{ hetzner_install_ansible_port }}
-# Uninstall semanage
-zypper --non-interactive remove policycoreutils-python-utils
-
-# Install python for ansible
-zypper --non-interactive install python3 python3-docker
 
 # Changing GRUB Timeout
 sed -i '/^GRUB_TIMEOUT=/s/\([0-9]\+\)$/2/' /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
 # Creating subvolume and adding config to snapper
-# Apparently /dev/disk/by-partlabel/p.spare does not exist
-mount /dev/disk/by-label/SPARE /mnt
-btrfs -q subvolume create /mnt/container-volumes
-btrfs -q property set /mnt/container-volumes compression zstd
-btrfs quota enable /mnt/container-volumes/
-btrfs -q subvolume create /mnt/container-volumes/.snapshots
+SUBVOLUME_PATH="{{ ("/home/", hetzner_install_ansible_user, "volumes") | path_join }}"
+btrfs -q subvolume create "$SUBVOLUME_PATH"
+btrfs -q property set "$SUBVOLUME_PATH" compression zstd
+btrfs quota enable "$SUBVOLUME_PATH"
+chown --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SUBVOLUME_PATH"
+btrfs -q subvolume create "{{ ("/home/", hetzner_install_ansible_user, "volumes", ".snapshots") | path_join }}"
 
-cat > /etc/snapper/configs/container-volumes <<EOF
-# subvolume to snapshot
-SUBVOLUME="/var/container-volumes"
+cat > /etc/snapper/configs/container-volumes <<-EOF
+	# subvolume to snapshot
+	SUBVOLUME="$SUBVOLUME_PATH"
+	
+	# qgroup of the subvolume
+	QGROUP="$(btrfs subvolume show $SUBVOLUME_PATH | grep Quota | cut -f4)"
+	
+	# filesystem type
+	FSTYPE="btrfs"
+	
+	# fraction of the filesystems space the snapshots may use
+	SPACE_LIMIT="0.5"
+	
+	# fraction of the filesystems space that should be free
+	FREE_LIMIT="0.2"
+	
+	# users and groups allowed to work with config
+	ALLOW_USERS=""
+	ALLOW_GROUPS=""
+	
+	# sync users and groups from ALLOW_USERS and ALLOW_GROUPS to .snapshots
+	# directory
+	SYNC_ACL="no"
+	
+	# start comparing pre- and post-snapshot in background after creating
+	# post-snapshot
+	BACKGROUND_COMPARISON="yes"
+	
+	# run daily number cleanup
+	NUMBER_CLEANUP="yes"
+	
+	# limit for number cleanup
+	NUMBER_MIN_AGE="0"
+	NUMBER_LIMIT="0"
+	NUMBER_LIMIT_IMPORTANT="10"
+	
+	# create hourly snapshots
+	TIMELINE_CREATE="yes"
+	
+	# cleanup hourly snapshots after some time
+	TIMELINE_CLEANUP="yes"
+	
+	# limits for timeline cleanup
+	TIMELINE_MIN_AGE="1800"
+	TIMELINE_LIMIT_HOURLY="12"
+	TIMELINE_LIMIT_DAILY="7"
+	TIMELINE_LIMIT_WEEKLY="2"
+	TIMELINE_LIMIT_MONTHLY="0"
+	TIMELINE_LIMIT_YEARLY="0"
+	
+	# cleanup empty pre-post-pairs
+	EMPTY_PRE_POST_CLEANUP="yes"
+	
+	# limits for empty pre-post-pair cleanup
+	EMPTY_PRE_POST_MIN_AGE="0"
+	EOF
 
-# filesystem type
-FSTYPE="btrfs"
-
-# fraction of the filesystems space the snapshots may use
-SPACE_LIMIT="0.5"
-
-# fraction of the filesystems space that should be free
-FREE_LIMIT="0.2"
-
-# users and groups allowed to work with config
-ALLOW_USERS=""
-ALLOW_GROUPS=""
-
-# sync users and groups from ALLOW_USERS and ALLOW_GROUPS to .snapshots
-# directory
-SYNC_ACL="no"
-
-# start comparing pre- and post-snapshot in background after creating
-# post-snapshot
-BACKGROUND_COMPARISON="yes"
-
-# run daily number cleanup
-NUMBER_CLEANUP="yes"
-
-# limit for number cleanup
-NUMBER_MIN_AGE="0"
-NUMBER_LIMIT="0"
-NUMBER_LIMIT_IMPORTANT="10"
-
-# create hourly snapshots
-TIMELINE_CREATE="yes"
-
-# cleanup hourly snapshots after some time
-TIMELINE_CLEANUP="yes"
-
-# limits for timeline cleanup
-TIMELINE_MIN_AGE="1800"
-TIMELINE_LIMIT_HOURLY="12"
-TIMELINE_LIMIT_DAILY="7"
-TIMELINE_LIMIT_WEEKLY="2"
-TIMELINE_LIMIT_MONTHLY="0"
-TIMELINE_LIMIT_YEARLY="0"
-
-# cleanup empty pre-post-pairs
-EMPTY_PRE_POST_CLEANUP="yes"
-
-# limits for empty pre-post-pair cleanup
-EMPTY_PRE_POST_MIN_AGE="0"
-EOF
-
-printf 'QGROUP="%s"\n' "$(btrfs subvolume show /mnt/container-volumes/ | grep Quota | cut -f4)" >> /etc/snapper/configs/container-volumes
-umount /mnt
-
+umount /home
 sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/snapper
+
+# Uninstall semanage
+zypper --non-interactive remove policycoreutils-python-utils
