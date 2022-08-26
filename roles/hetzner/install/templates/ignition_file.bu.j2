@@ -56,7 +56,7 @@ storage:
     - path: /etc/logrotate.conf
       append:
         - inline: |
-            nocompress
+            rotate 0
 systemd:
   units:
     - name: docker.service
