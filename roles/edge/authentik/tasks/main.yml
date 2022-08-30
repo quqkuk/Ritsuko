@@ -6,7 +6,7 @@
     mode: 0700
     recurse: true
 
-- name: Create authentik network exists
+- name: Ensuring authentik network exists
   community.docker.docker_network:
     name: authentik
     driver: bridge
