@@ -4,11 +4,15 @@
 
 set -ex
 
-# Install docker docker-compose, python (for ansible) and selinux management tools
-zypper --non-interactive install docker docker-compose python3 python3-docker policycoreutils-python-utils
+# Install docker python (for ansible) and selinux management tools
+zypper --non-interactive install docker python3 python3-docker policycoreutils-python-utils
 
 ## Change subuids and subgids
 sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
+
+sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1)){s/$/,/; a\\
+  \"userns-remap\": \"dockremap\"
+}" /etc/docker/daemon.json
 
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home

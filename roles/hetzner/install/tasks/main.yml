@@ -90,7 +90,6 @@
     # Mount config partition
     - name: Mounting the last partition
       ansible.posix.mount:
-        boot: false
         src: '{{ ("/dev/", hetzner_install_ignition_partition) | path_join }}'
         fstype: ext4
         path: /mnt/ignition
@@ -159,7 +158,6 @@
     # Unmount the config partition if mounted
     - name: Unmounting the last partition
       ansible.posix.mount:
-        boot: false
         path: /mnt/ignition
         state: absent
 
