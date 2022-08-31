@@ -3,8 +3,7 @@
   ansible.builtin.file:
     path: '{{ authentik_data_folder }}'
     state: directory
-    mode: 0700
-    recurse: true
+    mode: 0755
 
 - name: Ensuring authentik network exists
   community.docker.docker_network:
@@ -13,12 +12,41 @@
     internal: true
     state: present
 
-#- name: Create authentik-outside network
-#  community.docker.docker_network:
-#    name: authentik-outside
-#    driver: bridge
-#    internal: false
-#    state: present
+- name: Moving traefik configs
+  become: true
+  block:
+    - name: Ensuring database folder exists
+      ansible.builtin.file:
+        path: '{{ (authentik_data_folder, "data") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 101000
+        group: 101000
+    
+    - name: Ensuring worker media folder exists
+      become: true
+      ansible.builtin.file:
+        path: '{{ (authentik_data_folder, "media") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 101000
+        group: 101000
+    
+    - name: Ensuring custom templates folder exists
+      ansible.builtin.file:
+        path: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 101000
+        group: 101000
+    
+    - name: Ensuring certs folder exists
+      ansible.builtin.file:
+        path: '{{ (authentik_data_folder, "certs") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: 101000
+        group: 101000
 
 - name: Create Redis container
   community.docker.docker_container:
@@ -81,12 +109,12 @@
         aliases:
           - 'socket-proxy'
     env:
-      CONTAINERS: 1
-      IMAGES: 1
+      CONTAINERS: '1'
+      IMAGES: '1'
 
 - name: Create Authentik worker container
   community.docker.docker_container:
-    name: authentik
+    name: authentik-worker
     image: ghcr.io/goauthentik/server
     command: worker
     keep_volumes: false
@@ -109,10 +137,8 @@
       AUTHENTIK_EMAIL__USE_TLS: '{{ authentik_email["use_tls"] | default(omit) }}'
       AUTHENTIK_EMAIL__USE_SSL: '{{ authentik_email["use_ssl"] | default(omit) }}'
       AUTHENTIK_EMAIL__TIMEOUT: '{{ authentik_email["timeout"] | default(omit) }}'
-      AUTHENTIK_EMAIL__FROM= '{{ authentik_email["from"] | default(omit) }}'
-      #AUTHENTIK_PORT_HTTP=80
-      #AUTHENTIK_PORT_HTTPS=443
-      AUTHENTIK_ERROR_REPORTING__ENABLED: false
+      AUTHENTIK_EMAIL__FROM: '{{ authentik_email["from"] | default(omit) }}'
+      AUTHENTIK_ERROR_REPORTING__ENABLED: 'false'
     networks:
       - name: authentik
         aliases:
@@ -136,12 +162,13 @@
     keep_volumes: false
     restart_policy: unless-stopped
     env: *authentik-env
+      #AUTHENTIK_PORT_HTTP: 80
+      #AUTHENTIK_PORT_HTTPS: 443
     networks:
       - name: authentik
         aliases:
           - 'authentik'
       - name: '{{ reverse_proxy_network }}'
-
     mounts:
       - type: bind
         source: '{{ (authentik_data_folder, "media") | path_join }}'
@@ -149,6 +176,11 @@
       - type: bind
         source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
         target: /templates
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.authentik.entryPoints: https
+      traefik.http.routers.authentik.rule: Host(`auth.magisystem.xyz`)
+      traefik.http.services.authentik.loadbalancer.server.port: '9000'
     #ports:
     #  - 9000:9000
     #  - 9443:9443
