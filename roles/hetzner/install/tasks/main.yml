@@ -28,12 +28,7 @@
   vars:
     mounted_partitions: '{{ ansible_facts.mounts | map(attribute="device") | unique }}'
     non_removable_devices: '{{ ansible_facts.devices | dict2items | rejectattr("value.removable", "truthy", convert_bool=True) | map(attribute="key") | sort }}'
-
-#TODO: Turn this into a failed_when on the previous task
-- name: Fail if we couldn't find an installation drive
-  ansible.builtin.fail:
-    msg: 'Couldn''t find an installation drive among {{ ansible_facts.devices.keys() | list }}'
-  when: hetzner_install_installation_drive is undefined
+  failed_when: hetzner_install_installation_drive is undefined
 
 - name: Stop before installation
   ansible.builtin.pause:
@@ -71,10 +66,9 @@
       - hardware
 
 # The partition should have been created by install_ignition.sh
-#TODO: use negative index instead of subtracting length
 - name: Choose config partition
   ansible.builtin.set_fact:
-    hetzner_install_ignition_partition: '{{ partitions[(partitions | length) - 1] }}'
+    hetzner_install_ignition_partition: '{{ partitions[-1] }}'
   vars:
     partitions: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions.keys() | sort }}'
 

@@ -2,13 +2,12 @@ variant: fcos
 version: 1.4.0
 storage:
   disks:
-    # TODO: The partition numbers could be dynamic, hopefully it stays the same
+    # Hopefully the disk file stays the same
     - device: {{ ("/dev/", hetzner_install_installation_drive) | path_join }}
       partitions:
         - number: 5
           should_exist: False
           wipe_partition_entry: True
-        # TODO: Verify partition expansion
         - number: 3
           resize: True
           size_mib: 0
