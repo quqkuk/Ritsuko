@@ -4,7 +4,6 @@
     path: '{{ container_config_folder }}'
     state: directory
     mode: 0755
-    recurse: true
 
 - name: Create services network
   community.docker.docker_network:
