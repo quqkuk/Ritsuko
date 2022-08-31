@@ -30,7 +30,6 @@
         owner: 100000
         group: 100000
     
-    #TODO: Template and then check whether copying is needed
     - name: Template Traefik's Static Config
       ansible.builtin.template:
         src: traefik.yml.j2
@@ -40,7 +39,6 @@
         group: 100000
       register: edge_containers_traefik_static_config
     
-    #TODO: Copy only what's needed
     #TODO: Consider using rsync
     - name: Copy Traefik's dynamic file configs
       ansible.builtin.copy:
