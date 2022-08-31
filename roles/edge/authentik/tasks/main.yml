@@ -180,7 +180,7 @@
     command: server
     keep_volumes: false
     restart_policy: unless-stopped
-    env: *authentik-env
+    env:
       AUTHENTIK_PORT_LDAP: '389'
       AUTHENTIK_PORT_LDAPS: '636'
       AUTHENTIK_HOST: https://authentik:9443
