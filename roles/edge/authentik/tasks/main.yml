@@ -90,28 +90,6 @@
         aliases:
           - 'database'
 
-#TODO: If this works, then privileged is not needed and the flag should be removed from traefik's socket proxy container
-- name: Create socket proxy container
-  community.docker.docker_container:
-    name: authentik-socket-proxy
-    image: tecnativa/docker-socket-proxy
-    keep_volumes: false
-    userns_mode: host
-    user: root
-    restart_policy: unless-stopped
-    mounts:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
-    networks:
-      - name: authentik
-        aliases:
-          - 'socket-proxy'
-    env:
-      CONTAINERS: '1'
-      IMAGES: '1'
-
 - name: Create Authentik worker container
   community.docker.docker_container:
     name: authentik-worker
@@ -139,6 +117,7 @@
       AUTHENTIK_EMAIL__TIMEOUT: '{{ authentik_email["timeout"] | default(omit) }}'
       AUTHENTIK_EMAIL__FROM: '{{ authentik_email["from"] | default(omit) }}'
       AUTHENTIK_ERROR_REPORTING__ENABLED: 'false'
+      AUTHENTIK_AVATARS: 'attributes.avatar'
     networks:
       - name: authentik
         aliases:
@@ -184,3 +163,5 @@
     #ports:
     #  - 9000:9000
     #  - 9443:9443
+
+#TODO: Create LDAP Outpost
