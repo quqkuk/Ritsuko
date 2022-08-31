@@ -195,4 +195,4 @@
       - name: ldap
         aliases:
           - ldap
-    when: authentik_ldap_token is defined
+  when: authentik_ldap_token is defined
