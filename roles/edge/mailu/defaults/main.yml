@@ -1,0 +1,11 @@
+---
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+mailu_data_folder: '{{ (container_volumes_folder | mandatory, "authentik") | path_join }}'
+mailu_config:
+  secret_key: '{{ undef(hint="Randomly generated 16 bytes string") }}'
+  main_domain: '{{ undef(hint="Main mail domain") }}'
+  additional_domains: '{{ undef(hint="Other hostnames for this server") }}'
+  # Postmaster account name
+  postmaster: '{{ ansible_user }}'
+  database_password: '{{ undef(hint="Database password") }}'
+
