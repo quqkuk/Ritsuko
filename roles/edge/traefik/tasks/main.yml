@@ -5,20 +5,6 @@
     state: directory
     mode: 0555
 
-- name: Create traefik network
-  community.docker.docker_network:
-    name: traefik
-    driver: bridge
-    internal: true
-    state: present
-
-- name: Create traefik-outside network
-  community.docker.docker_network:
-    name: traefik-outside
-    driver: bridge
-    internal: false
-    state: present
-
 - name: Moving traefik configs
   become: true
   block:
@@ -47,6 +33,20 @@
         mode: 0444
         owner: 100000
         group: 100000
+
+- name: Create traefik network
+  community.docker.docker_network:
+    name: traefik
+    driver: bridge
+    internal: true
+    state: present
+
+- name: Create traefik-outside network
+  community.docker.docker_network:
+    name: traefik-outside
+    driver: bridge
+    internal: false
+    state: present
 
 - name: Create socket proxy container
   community.docker.docker_container:
