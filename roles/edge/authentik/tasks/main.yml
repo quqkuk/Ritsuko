@@ -8,13 +8,20 @@
 - name: Creating authentik volume folders
   become: true
   block:
-    - name: Ensuring database folder exists
+    - name: Checking database folder exists
+      ansible.builtin.stat:
+        path: '{{ (authentik_data_folder, "data") | path_join }}'
+      register: authentik_database_folder
+      ignore_errors: true
+
+    - name: Creating database folder
       ansible.builtin.file:
         path: '{{ (authentik_data_folder, "data") | path_join }}'
         state: directory
         mode: 0700
         owner: 101000
         group: 101000
+      when: authentik_database_folder is failed
     
     - name: Ensuring worker media folder exists
       become: true
