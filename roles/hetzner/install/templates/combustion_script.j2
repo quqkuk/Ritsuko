@@ -4,6 +4,9 @@
 
 set -ex
 
+rm /etc/localtime
+ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
+
 # Install docker python (for ansible) and selinux management tools
 zypper --non-interactive install docker python3 python3-docker policycoreutils-python-utils
 
