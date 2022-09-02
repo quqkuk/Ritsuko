@@ -12,7 +12,7 @@
       ansible.builtin.file:
         path: '{{ (authentik_data_folder, "data") | path_join }}'
         state: directory
-        mode: 0755
+        mode: 0700
         owner: 101000
         group: 101000
     
@@ -21,7 +21,7 @@
       ansible.builtin.file:
         path: '{{ (authentik_data_folder, "media") | path_join }}'
         state: directory
-        mode: 0755
+        mode: 0700
         owner: 101000
         group: 101000
     
