@@ -5,7 +5,7 @@ mailserver_data_folder: '{{ (container_volumes_folder | mandatory, "mailserver")
 mailserver_hostname: '{{ undef(hint="Mail server hostname") }}'
 mailserver_domainname: '{{ undef(hint="Mail server domain") }}'
 mailserver_postmaster: '{{ undef(hint="Mail server postmaster name") }}'
-mailserver_ldap:
-  search_base_dn: '{{ undef(hint="Base DN for user search") }}'
-  ldap_bind_dn: '{{ undef(hint="DN of a User with search privileges") }}'
-  ldap_bind_pw: '{{ undef(hint="Password of the Bind DN user") }}'
+#mailserver_ldap:
+#  search_base_dn: '{{ undef(hint="Base DN for user search") }}'
+#  ldap_bind_dn: '{{ undef(hint="DN of a User with search privileges") }}'
+#  ldap_bind_pw: '{{ undef(hint="Password of the Bind DN user") }}'
