@@ -62,9 +62,7 @@
   ansible.builtin.template:
     src: postfix-mynetworks.cf.j2
     dest: '{{ (mailserver_data_folder, "config", "postfix-main.cf") | path_join }}'
-    mode: 0444
-    owner: 101000
-    group: 101000
+    mode: 0444 owner: 101000 group: 101000
 
 - name: Ensuring mailserver-outside network exists
   community.docker.docker_network:
@@ -104,7 +102,6 @@
         target: /etc/localtime
         read_only: true
     networks:
-#      - name: ldap
       - name: mail
         aliases:
           - mailserver

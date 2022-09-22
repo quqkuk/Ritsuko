@@ -44,8 +44,8 @@
   roles:
     - role: edge/setup
     - role: edge/traefik
-    #- role: edge/mailu
-    #- role: edge/authentik
+    - role: edge/mailserver
+    - role: edge/authentik
     #- role: edge/nextcloud
     #- role: edge/bitwarden
     #- role: edge/firefox-sync
