@@ -50,9 +50,6 @@ storage:
         inline: |
           # Permit passwordless sudo to {{ hetzner_install_ansible_user }}
           {{ hetzner_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
-    - path: /etc/snapper/configs/container-volumes
-      contents:
-        inline: |
     - path: /etc/logrotate.conf
       append:
         - inline: |
