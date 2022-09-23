@@ -1,0 +1,168 @@
+---
+- name: Ensuring data folder exists
+  ansible.builtin.file:
+    path: '{{ nextcloud_data_folder }}'
+    state: directory
+    mode: 0755
+
+- name: Creating Nextcloud volume folders
+  become: true
+  block:
+    - name: Checking database folder exists
+      ansible.builtin.stat:
+        path: '{{ (nextcloud_data_folder, "data") | path_join }}'
+      register: nextcloud_database_folder
+
+    - name: Creating database folder
+      ansible.builtin.file:
+        path: '{{ (nextcloud_data_folder, "data") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: 101000
+        group: 101000
+      when: not (nextcloud_database_folder | community.general.json_query('stat.exists'))
+    
+    - name: Checking application folder exists
+      ansible.builtin.stat:
+        path: '{{ (nextcloud_data_folder, "app") | path_join }}'
+      register: nextcloud_application_folder
+
+    - name: Creating application folder
+      ansible.builtin.file:
+        path: '{{ (nextcloud_data_folder, "app") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: 101000
+        group: 101000
+      when: not (nextcloud_application_folder | community.general.json_query('stat.exists'))
+
+- name: Ensuring Nextcloud network exists
+  community.docker.docker_network:
+    name: nextcloud
+    driver: bridge
+    internal: true
+    state: present
+
+- name: Create Redis container
+  community.docker.docker_container:
+    name: nextcloud-redis
+    image: redis:alpine
+    command: 'redis-server --requirepass {{ nextcloud_redis_password }}'
+    restart_policy: unless-stopped
+    keep_volumes: false
+    networks:
+      - name: nextcloud
+        aliases:
+          - redis
+
+- name: Create MariaDB container
+  community.docker.docker_container:
+    name: nextcloud-database
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart_policy: unless-stopped
+    keep_volumes: false
+    env:
+      MARIADB_RANDOM_ROOT_PASSWORD: yes
+      MARIADB_DATABASE: nextcloud
+      MARIADB_USER: nextcloud
+      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
+    mounts:
+      - type: bind
+        source: '{{ (nextcloud_data_folder, "data") | path_join }}'
+        target: /var/lib/mysql
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+    networks:
+      - name: nextcloud
+        aliases:
+          - database
+
+- name: Ensuring Nextcloud Outside network exists
+  community.docker.docker_network:
+    name: nextcloud-outside
+    driver: bridge
+    internal: false
+    state: present
+
+- name: Create Nextcloud container
+  community.docker.docker_container:
+    name: nextcloud
+    image: nextcloud
+    keep_volumes: false
+    restart_policy: unless-stopped
+    env:
+      MARIADB_DATABASE: nextcloud
+      MARIADB_USER: nextcloud
+      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
+      MYSQL_HOST: database
+      REDIS_HOST: redis
+      #TRUSTED_PROXIES=192.168.0.0/24
+      #APACHE_DISABLE_REWRITE_IP=1
+      #OVERWRITEHOST=cloud.magisystem.xyz
+      OVERWRITEPROTOCOL=https
+      REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
+    networks:
+      - name: nextcloud
+      - name: nextcloud-outside
+      - name: '{{ reverse_proxy_network }}'
+    mounts:
+      - type: bind
+        source: '{{ (nextcloud_data_folder, "app") | path_join }}'
+        target: /var/www/html
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.nextcloud.entryPoints: https
+      traefik.http.routers.nextcloud.rule: Host(`cloud.magisystem.xyz`)
+      traefik.http.routers.nextcloud.middlewares: nextcloud_header,nextcloud_redirect
+      traefik.http.middlewares.nextcloud_header.headers.stsSeconds: '15552000'
+      traefik.http.middlewares.nextcloud_redirect.redirectregex.regex: /.well-known/(card|cal)dav
+      traefik.http.middlewares.nextcloud_redirect.redirectregex.replacement: /remote.php/dav/
+      traefik.http.middlewares.nextcloud_redirect.redirectregex.permanent: 'true'
+      traefik.http.services.nextcloud.loadbalancer.server.port: '80'
+#TODO: Setup master key encryption
+
+- name: Create Nextcloud container
+  community.docker.docker_container:
+    name: nextcloud-cronjobs
+    image: nextcloud
+    entrypoint: /cron.sh
+    keep_volumes: false
+    restart_policy: unless-stopped
+    mounts:
+      - type: bind
+        source: '{{ (nextcloud_data_folder, "app") | path_join }}'
+        target: /var/www/html
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+
+- name: Create Document Server container
+  community.docker.docker_container:
+    name: nextcloud-documentserver
+    image: onlyoffice/documentserver:latest
+    keep_volumes: false
+    restart_policy: unless-stopped
+    env:
+      JWT_ENABLED: 'true'
+      JWT_SECRET: '{{ nextcloud_docserver_secret }}'
+      JWT_HEADER: Authorization
+      JWT_IN_BODY: 'true'
+    networks:
+      - name: '{{ reverse_proxy_network }}'
+    mounts:
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+        #- "$HOME/volumes/nextcloud/onlyoffice/data:/var/www/onlyoffice/Data"
+        #- "$HOME/volumes/nextcloud/onlyoffice/fonts:/usr/share/fonts"
+        #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+        #- files:/var/www/onlyoffice/documentserver-example/public/files
