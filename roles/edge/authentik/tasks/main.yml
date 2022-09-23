@@ -12,7 +12,6 @@
       ansible.builtin.stat:
         path: '{{ (authentik_data_folder, "data") | path_join }}'
       register: authentik_database_folder
-      ignore_errors: true
 
     - name: Creating database folder
       ansible.builtin.file:
