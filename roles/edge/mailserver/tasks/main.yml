@@ -64,12 +64,12 @@
     dest: '{{ (mailserver_data_folder, "config", "postfix-main.cf") | path_join }}'
     mode: 0444 owner: 101000 group: 101000
 
-- name: Ensuring mailserver-outside network exists
-  community.docker.docker_network:
-    name: mailserver-outside
-    driver: bridge
-    internal: false
-    state: present
+#- name: Ensuring mailserver-outside network exists
+#  community.docker.docker_network:
+#    name: mailserver-outside
+#    driver: bridge
+#    internal: false
+#    state: present
 
 #TODO: Restart in case config changed
 - name: Create mailserver container
@@ -106,7 +106,7 @@
       - name: mail
         aliases:
           - mailserver
-      - name: mailserver-outside
+      #- name: mailserver-outside
     published_ports:
       - '25:25'   # SMTP  (explicit TLS => STARTTLS)
 #      - '143:143' # IMAP4 (explicit TLS => STARTTLS)
