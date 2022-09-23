@@ -71,6 +71,7 @@
     internal: false
     state: present
 
+#TODO: Restart in case config changed
 - name: Create mailserver container
   community.docker.docker_container:
     name: mailserver
