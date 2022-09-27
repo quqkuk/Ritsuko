@@ -1,0 +1,112 @@
+---
+- name: Ensuring data folder exists
+  ansible.builtin.file:
+    path: '{{ bitwarden_data_folder }}'
+    state: directory
+    mode: 0755
+
+- name: Creating Bitwarden volume folders
+  become: true
+  block:
+    - name: Checking database folder exists
+      ansible.builtin.stat:
+        path: '{{ (bitwarden_data_folder, "data") | path_join }}'
+      register: bitwarden_database_folder
+
+    - name: Creating database folder
+      ansible.builtin.file:
+        path: '{{ (bitwarden_data_folder, "data") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: 101000
+        group: 101000
+      when: not (bitwarden_database_folder | community.general.json_query('stat.exists'))
+    
+    - name: Checking application folder exists
+      ansible.builtin.stat:
+        path: '{{ (bitwarden_data_folder, "state") | path_join }}'
+      register: bitwarden_application_folder
+
+    - name: Creating application folder
+      ansible.builtin.file:
+        path: '{{ (bitwarden_data_folder, "state") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: 101000
+        group: 101000
+      when: not (bitwarden_application_folder | community.general.json_query('stat.exists'))
+
+- name: Ensuring Bitwarden network exists
+  community.docker.docker_network:
+    name: bwarden
+    driver: bridge
+    internal: true
+    state: present
+
+- name: Create Database container
+  community.docker.docker_container:
+    name: bitwarden-database
+    image: mariadb
+    restart_policy: unless-stopped
+    keep_volumes: false
+    env:
+      MARIADB_RANDOM_ROOT_PASSWORD: yes
+      MARIADB_DATABASE: bwarden
+      MARIADB_USER: bwarden
+      MARIADB_PASSWORD: '{{ bitwarden_database_password }}'
+    mounts:
+      - type: bind
+        source: '{{ (bitwarden_data_folder, "data") | path_join }}'
+        target: /var/lib/mysql
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+    networks:
+      - name: bwarden
+        aliases:
+          - database
+
+- name: Ensuring Bitwarden Outside network exists
+  community.docker.docker_network:
+    name: bwarden-outside
+    driver: bridge
+    internal: false
+    state: present
+
+- name: Create Vaultwarden container
+  community.docker.docker_container:
+    name: bitwarden
+    image: vaultwarden/server:latest
+    keep_volumes: false
+    restart_policy: unless-stopped
+    env:
+      WEBSOCKET_ENABLED: 'true'
+      SIGNUPS_ALLOWED: 'false'
+      DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@db/bwarden'
+    networks:
+      - name: bwarden
+      - name: bwarden-outside
+      - name: '{{ reverse_proxy_network }}'
+    mounts:
+      - type: bind
+        source: '{{ (bitwarden_data_folder, "state") | path_join }}'
+        target: /data
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.bwarden-web.entryPoints: https
+      traefik.http.routers.bwarden-web.rule: Host(`bwarden.magisystem.xyz`) && !PathPrefix(`/admin`)
+      traefik.http.routers.bwarden-web.service: bwarden-web
+      traefik.http.services.bwarden-web.loadbalancer.server.port: '80'
+      traefik.http.routers.bwarden-admin.entryPoints: vaultwarden-admin
+      traefik.http.routers.bwarden-admin.rule: PathPrefix(`/`)
+      traefik.http.routers.bwarden-admin.service: bwarden-web
+      traefik.http.routers.bwarden-websocket.entryPoints: https
+      traefik.http.routers.bwarden-websocket.rule: Host(`bwarden.magisystem.xyz`) && Path(`/notifications/hub`)
+      traefik.http.routers.bwarden-websocket.service: bwarden-websocket
+      traefik.http.services.bwarden-websocket.loadbalancer.server.port: '3012'
+#TODO: Run ldap connector

@@ -1,0 +1,4 @@
+---
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+bitwarden_data_folder: '{{ (container_volumes_folder | mandatory, "bwarden") | path_join }}'
+bitwarden_database_password: '{{ undef(hint="Bitwarden Database''s password") }}'
