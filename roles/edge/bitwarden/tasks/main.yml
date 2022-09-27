@@ -83,7 +83,7 @@
     env:
       WEBSOCKET_ENABLED: 'true'
       SIGNUPS_ALLOWED: 'false'
-      DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@db/bwarden'
+      DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@database/bwarden'
     networks:
       - name: bwarden
       - name: bwarden-outside
