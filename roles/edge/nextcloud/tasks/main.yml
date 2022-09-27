@@ -116,6 +116,7 @@
         source: /etc/localtime
         target: /etc/localtime
         read_only: true
+    register: nextcloud_container
     labels:
       traefik.enable: 'true'
       traefik.http.routers.nextcloud.entryPoints: https
@@ -126,7 +127,6 @@
       traefik.http.middlewares.nextcloud_redirect.redirectregex.replacement: /remote.php/dav/
       traefik.http.middlewares.nextcloud_redirect.redirectregex.permanent: 'true'
       traefik.http.services.nextcloud.loadbalancer.server.port: '80'
-#TODO: Setup master key encryption
 
 - name: Create Nextcloud cronjob container
   community.docker.docker_container:
@@ -166,3 +166,10 @@
         #- "$HOME/volumes/nextcloud/onlyoffice/fonts:/usr/share/fonts"
         #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
         #- files:/var/www/onlyoffice/documentserver-example/public/files
+
+- name: Enabling per-user key encryption 
+  community.docker.docker_container_exec:
+    container: nextcloud
+    user: www-data
+    chdir: /var/www/html
+    command: php ./occ encryption:disable-master-key
