@@ -1,5 +1,4 @@
 ---
-reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
 mailserver_config_file: '{{ (container_config_folder | mandatory, "mailserver.env") | path_join }}'
 mailserver_data_folder: '{{ (container_volumes_folder | mandatory, "mailserver") | path_join }}'
 mailserver_hostname: '{{ undef(hint="Mail server hostname") }}'
