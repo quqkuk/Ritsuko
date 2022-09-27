@@ -25,7 +25,7 @@
     - name: Checking application folder exists
       ansible.builtin.stat:
         path: '{{ (bitwarden_data_folder, "state") | path_join }}'
-      register: bitwarden_application_folder
+      register: bitwarden_state_folder
 
     - name: Creating application folder
       ansible.builtin.file:
@@ -34,7 +34,7 @@
         mode: 0700
         owner: 101000
         group: 101000
-      when: not (bitwarden_application_folder | community.general.json_query('stat.exists'))
+      when: not (bitwarden_state_folder | community.general.json_query('stat.exists'))
 
 - name: Ensuring Bitwarden network exists
   community.docker.docker_network:
