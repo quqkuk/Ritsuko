@@ -128,7 +128,7 @@
       traefik.http.services.nextcloud.loadbalancer.server.port: '80'
 #TODO: Setup master key encryption
 
-- name: Create Nextcloud container
+- name: Create Nextcloud cronjob container
   community.docker.docker_container:
     name: nextcloud-cronjobs
     image: nextcloud
