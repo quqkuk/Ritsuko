@@ -74,6 +74,7 @@
     internal: false
     state: present
 
+#TODO: Enable mail
 - name: Create Vaultwarden container
   community.docker.docker_container:
     name: bitwarden
