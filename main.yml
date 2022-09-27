@@ -46,7 +46,7 @@
     - role: edge/traefik
     - role: edge/mailserver
     - role: edge/authentik
-    #- role: edge/nextcloud
-    #- role: edge/bitwarden
-    #- role: edge/firefox-sync
-    #- role: edge/diun
+    - role: edge/nextcloud
+    - role: edge/bitwarden
+    - role: edge/firefox-sync
+    - role: edge/diun
