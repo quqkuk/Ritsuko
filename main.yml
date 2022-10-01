@@ -59,5 +59,6 @@
     - role: edge/authentik
     - role: edge/nextcloud
     - role: edge/bitwarden
+      when: authentik_ldap_token is defined
     - role: edge/firefox-sync
     - role: edge/diun
