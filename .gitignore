@@ -1,5 +1,8 @@
 /*hosts
 /host_vars/*
-/group_vars/edge/acme_credentials.yml
 !/host_vars/.gitkeep
+/group_vars/*
+!/group_vars/edge
+/group_vars/edge/*
+!/group_vars/edge/reverse_proxy_network_parameters.yml
 /ssh_keys
