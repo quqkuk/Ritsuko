@@ -103,7 +103,7 @@
       #TRUSTED_PROXIES=192.168.0.0/24
       #APACHE_DISABLE_REWRITE_IP=1
       #OVERWRITEHOST=cloud.magisystem.xyz
-      OVERWRITEPROTOCOL=https
+      OVERWRITEPROTOCOL: https
       REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
     networks:
       - name: nextcloud
