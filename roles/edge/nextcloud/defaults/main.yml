@@ -4,3 +4,4 @@ nextcloud_data_folder: '{{ (container_volumes_folder | mandatory, "nextcloud") |
 nextcloud_redis_password: '{{ undef(hint="Nextcloud''s Redis password") }}'
 nextcloud_database_password: '{{ undef(hint="Nextcloud''s database password") }}'
 nextcloud_docserver_secret: '{{ undef(hint="Nextcloud''s Document Server secret") }}'
+nextcloud_mail_from: '{{ undef(hint="Email address nextcloud will send as, should have a correct @domain") }}'

@@ -105,6 +105,13 @@
       #OVERWRITEHOST=cloud.magisystem.xyz
       OVERWRITEPROTOCOL: https
       REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
+      SMTP_HOST: '{{ mail_server["host"] }}'
+      SMTP_SECURE: '{{ mail_server["use_ssl"] | bool | ternary("ssl", mail_server["use_tls"] | bool | ternary("tls", "")) }}'
+      SMTP_PORT: '{{ mail_server["port"] }}'
+      SMTP_AUTHTYPE: '{{ mail_server["username"] | bool | ternary("LOGIN", "PLAIN") }}'
+      SMTP_NAME: '{{ mail_server["username"] }}'
+      SMTP_PASSWORD: '{{ mail_server["password"] }}'
+      MAIL_FROM_ADDRESS: '{{ nextcloud_mail_from | default("") }}'
     networks:
       - name: nextcloud
       - name: nextcloud-outside
