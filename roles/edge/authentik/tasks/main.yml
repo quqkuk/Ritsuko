@@ -20,7 +20,7 @@
         mode: 0700
         owner: 101000
         group: 101000
-      when: not (authentik_database_folder | community.general.json_query('stat.exists'))
+      when: authentik_database_folder is failed
     
     - name: Ensuring worker media folder exists
       become: true
@@ -112,6 +112,10 @@
     command: worker
     keep_volumes: false
     restart_policy: unless-stopped
+    ## This is optional, and can be removed. If you remove this, the following will happen
+    ## - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
+    ## - The docker socket can't be accessed anymore
+    #user: root
     env: &authentik-env
       AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: database
@@ -119,21 +123,20 @@
       AUTHENTIK_POSTGRESQL__NAME: authentik
       AUTHENTIK_POSTGRESQL__PASSWORD: '{{ authentik_database_pass }}'
       AUTHENTIK_SECRET_KEY: '{{ authentik_secret_key }}'
-      AUTHENTIK_EMAIL__HOST: mailserver
-      AUTHENTIK_EMAIL__PORT: '587'
-      AUTHENTIK_EMAIL__USERNAME: ''
-      AUTHENTIK_EMAIL__PASSWORD: ''
-      AUTHENTIK_EMAIL__USE_TLS: 'false'
-      AUTHENTIK_EMAIL__USE_SSL: 'false'
-      AUTHENTIK_EMAIL__TIMEOUT: '30'
-      AUTHENTIK_EMAIL__FROM: auth@magisystem.xyz
+      AUTHENTIK_EMAIL__HOST: '{{ authentik_email["host"] | default("") }}'
+      AUTHENTIK_EMAIL__PORT: '{{ authentik_email["port"] | default("587") }}'
+      AUTHENTIK_EMAIL__USERNAME: '{{ authentik_email["username"] | default("") }}'
+      AUTHENTIK_EMAIL__PASSWORD: '{{ authentik_email["password"] | default("") }}'
+      AUTHENTIK_EMAIL__USE_TLS: '{{ authentik_email["use_tls"] | default("false") }}'
+      AUTHENTIK_EMAIL__USE_SSL: '{{ authentik_email["use_ssl"] | default("false") }}'
+      AUTHENTIK_EMAIL__TIMEOUT: '{{ authentik_email["timeout"] | default("30") }}'
+      AUTHENTIK_EMAIL__FROM: '{{ authentik_email["from"] | default("") }}'
       AUTHENTIK_ERROR_REPORTING__ENABLED: 'false'
       AUTHENTIK_AVATARS: 'attributes.avatar'
     networks:
       - name: authentik
         aliases:
           - worker
-      - name: mail
     mounts:
       - type: bind
         source: '{{ (authentik_data_folder, "media") | path_join }}'
@@ -159,7 +162,6 @@
       - name: authentik
         aliases:
           - authentik
-      - name: mail
       - name: '{{ reverse_proxy_network }}'
     mounts:
       - type: bind
@@ -187,8 +189,10 @@
     env:
       AUTHENTIK_PORT_LDAP: '389'
       AUTHENTIK_PORT_LDAPS: '636'
-      AUTHENTIK_HOST: http://authentik:9000
+      AUTHENTIK_HOST: https://authentik:9443
       AUTHENTIK_INSECURE: 'true'
+      #AUTHENTIK_HOST: http://authentik:9000
+      #AUTHENTIK_INSECURE: 'false'
       AUTHENTIK_TOKEN: '{{ authentik_ldap_token }}'
     networks:
       - name: authentik
