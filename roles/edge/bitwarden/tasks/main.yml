@@ -36,6 +36,14 @@
         group: 101000
       when: not (bitwarden_state_folder | community.general.json_query('stat.exists'))
 
+    - name: Creating config file
+      ansible.builtin.template:
+        src: vaultwarden_ldap.toml.j2
+        dest: '{{ bitwarden_ldap_config_file }}'
+        mode: 0744
+        owner: 101000
+        group: 101000
+
 - name: Ensuring Bitwarden network exists
   community.docker.docker_network:
     name: bwarden
@@ -83,6 +91,9 @@
     env:
       WEBSOCKET_ENABLED: 'true'
       SIGNUPS_ALLOWED: 'false'
+      INVITATIONS_ALLOWED: 'true'
+      #This should be ok as traefik is supposed to expose the admin panel only to the other entrypoint
+      DISABLE_ADMIN_TOKEN: 'true'
       DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@database/bwarden'
       SMTP_HOST: '{{ mail_server["host"] }}'
       SMTP_FROM: '{{ bitwarden_mail_from | default("") }}'
@@ -92,6 +103,8 @@
       SMTP_PASSWORD: '{{ mail_server["password"] }}'
     networks:
       - name: bwarden
+        aliases:
+          - bwarden
       - name: bwarden-outside
       - name: '{{ reverse_proxy_network }}'
     mounts:
@@ -115,4 +128,28 @@
       traefik.http.routers.bwarden-websocket.rule: Host(`bwarden.magisystem.xyz`) && Path(`/notifications/hub`)
       traefik.http.routers.bwarden-websocket.service: bwarden-websocket
       traefik.http.services.bwarden-websocket.loadbalancer.server.port: '3012'
-#TODO: Run ldap connector
+
+- name: Create Vaultwarden LDAP container
+  community.docker.docker_container:
+    name: bitwarden-ldap
+    image: vividboarder/vaultwarden_ldap
+    keep_volumes: false
+    restart_policy: unless-stopped
+    env:
+      CONFIG_PATH: /config.toml
+      #RUST_BACKTRACE: '1'
+    networks:
+      - name: bwarden
+      - name: ldap
+    mounts:
+      - type: bind
+        source: '{{ (bitwarden_data_folder, "state") | path_join }}'
+        target: /data
+      - type: bind
+        source: '{{ bitwarden_ldap_config_file }}'
+        target: /config.toml
+        read_only: true
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
