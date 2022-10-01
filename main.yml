@@ -43,10 +43,10 @@
     container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
     mail_server:
       # SMTP Host Emails are sent to
-      host: '{{ mail_server_settings["host"] | default("") }}'
+      host: '{{ mail_server_settings["host"] | default("") | trim }}'
       port: '{{ mail_server_settings["port"] | default("587") | int | string }}'
       # Optionally authenticate (don't add quotation marks to you password)
-      username: '{{ mail_server_settings["username"] | default("") }}'
+      username: '{{ mail_server_settings["username"] | trim | default("") }}'
       password: '{{ mail_server_settings["password"] | default("") }}'
       # Use StartTLS
       use_tls: '{{ mail_server_settings["use_tls"] | default("false") | bool | string }}'
