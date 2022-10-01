@@ -74,7 +74,6 @@
     internal: false
     state: present
 
-#TODO: Enable mail
 - name: Create Vaultwarden container
   community.docker.docker_container:
     name: bitwarden
@@ -85,6 +84,12 @@
       WEBSOCKET_ENABLED: 'true'
       SIGNUPS_ALLOWED: 'false'
       DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@database/bwarden'
+      SMTP_HOST: '{{ mail_server["host"] }}'
+      SMTP_FROM: '{{ bitwarden_mail_from | default("") }}'
+      SMTP_PORT: '{{ mail_server["port"] }}'
+      SMTP_SECURITY: '{{ mail_server["use_ssl"] | bool | ternary("force_tls", mail_server["use_tls"] | bool | ternary("starttls", "off")) }}'
+      SMTP_USERNAME: '{{ mail_server["username"] }}'
+      SMTP_PASSWORD: '{{ mail_server["password"] }}'
     networks:
       - name: bwarden
       - name: bwarden-outside
