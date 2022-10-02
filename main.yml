@@ -33,8 +33,8 @@
         ansible_port: '{{ hetzner_install_ansible_port }}'
         ansible_user: '{{ hetzner_install_ansible_user }}'
     #TODO: Fix this
-    #- name: Waiting for server to come back up online after reboot
-    #  ansible.builtin.wait_for_connection: {}
+    - name: Waiting for server to come back up online after reboot
+      ansible.builtin.wait_for_connection: {}
 
 - name: Managing containers on the Magisystem
   hosts: edge
