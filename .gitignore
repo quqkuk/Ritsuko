@@ -1,8 +1,2 @@
-/*hosts
-/host_vars/*
-!/host_vars/.gitkeep
-/group_vars/*
-!/group_vars/edge
-/group_vars/edge/*
-!/group_vars/edge/reverse_proxy_network_parameters.yml
+/*.pw
 /ssh_keys
