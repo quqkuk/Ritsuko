@@ -58,7 +58,7 @@
     restart_policy: unless-stopped
     keep_volumes: false
     env:
-      MARIADB_RANDOM_ROOT_PASSWORD: yes
+      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
       MARIADB_DATABASE: bwarden
       MARIADB_USER: bwarden
       MARIADB_PASSWORD: '{{ bitwarden_database_password }}'

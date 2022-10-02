@@ -51,7 +51,7 @@
     restart_policy: unless-stopped
     keep_volumes: false
     env:
-      MARIADB_RANDOM_ROOT_PASSWORD: yes
+      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
       MARIADB_DATABASE: ff-sync
       MARIADB_USER: ff-sync
       MARIADB_PASSWORD: '{{ firefox_database_password }}'
