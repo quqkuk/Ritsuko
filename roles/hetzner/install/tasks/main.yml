@@ -4,20 +4,20 @@
 
 - name: Upload ssh pubkey
   hetzner.hcloud.hcloud_ssh_key:
-    api_token: {{ hetzner_api_token }}
-    name: ansible-{{ inventory_hostname }}
-    fingerprint: {{ lookup('ansible.builtin.pipe', 'ssh-keygen -l -E md5 -f '+ansible_ssh_private_key_file+'.pub | sed ''s/.*MD5:\([a-zA-Z0-9:]*\).*/\1/''') }}
-    public_key: {{ lookup('ansible.builtin.file', ansible_ssh_private_key_file+'.pub') }}
+    api_token: '{{ hetzner_api_token }}'
+    name: 'ansible-{{ inventory_hostname }}'
+    fingerprint: '{{ lookup("ansible.builtin.pipe", ''ssh-keygen -l -E md5 -f ''+ansible_ssh_private_key_file+''.pub | sed ''''s/.*MD5:\([a-zA-Z0-9:]*\).*/\1/'''''') }}'
+    public_key: '{{ lookup("ansible.builtin.file", ansible_ssh_private_key_file+".pub") }}'
     state: present
   register: hetzner_install_ssh_key
 
 - name: Put server in recovery mode
   hetzner.hcloud.hcloud_server:
-    api_token: {{ hetzner_api_token }}
-    name: {{ inventory_hostname }}
+    api_token: '{{ hetzner_api_token }}'
+    name: '{{ inventory_hostname }}'
     rescue_mode: linux64
     ssh_keys:
-      - ansible-{{ inventory_hostname }}
+      - 'ansible-{{ inventory_hostname }}'
 
 - name: Waiting for server to come back up online after reboot
   ansible.builtin.wait_for_connection: {}
@@ -38,20 +38,20 @@
 - name: Choosing installation drive
   ansible.builtin.set_fact:
     hetzner_install_installation_drive: '{{ item }}'
-  loop: {{ non_removable_devices }}
+  loop: '{{ non_removable_devices }}'
   # Set Fact runs only if the variable has not been defined and if the list of indices returned by index_of is empty
   when: >
     hetzner_install_installation_drive is undefined and
     (mounted_partitions | ansible.utils.index_of('search', item, fail_on_missing=False, wantlist=True) | length) == 0
   vars:
-    mounted_partitions: {{ ansible_facts.mounts | map(attribute='device') | unique }}
-    non_removable_devices: {{ ansible_facts.devices | dict2items | rejectattr('value.removable', 'truthy', convert_bool=True) | map(attribute='key') | sort }}'
+    mounted_partitions: '{{ ansible_facts.mounts | map(attribute="device") | unique }}'
+    non_removable_devices: '{{ ansible_facts.devices | dict2items | rejectattr(''value.removable'', "truthy", convert_bool=True) | map(attribute="key") | sort }}'
   failed_when: hetzner_install_installation_drive is undefined
 
 - name: Stop before installation
   ansible.builtin.pause:
     echo: false
-    prompt: MicroOS is about to be installed on {{ inventory_hostname }}''s remote device {{ ('/dev/', hetzner_install_installation_drive) | path_join }}
+    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device {{ (''/dev/'', hetzner_install_installation_drive) | path_join }}'
     seconds: 10
 
 - name: Downloading and installing OS to disc
@@ -62,14 +62,14 @@
         dest: ./install_ignition.sh
         mode: 0544
     - name: Running installation script
-      ansible.builtin.command: ./install_ignition.sh {{ ('/dev/', hetzner_install_installation_drive) | path_join }}
+      ansible.builtin.command: './install_ignition.sh {{ (''/dev/'', hetzner_install_installation_drive) | path_join }}'
       register: hetzner_install_script_result
       failed_when: hetzner_install_script_result.rc != 0
       changed_when: hetzner_install_script_result.rc == 0
   always:
     - name: Show command result
       ansible.builtin.debug:
-        msg: {{ hetzner_install_script_result is succeeded | ternary(hetzner_install_script_result.stdout_lines, hetzner_install_script_result.stderr_lines) }}
+        msg: '{{ hetzner_install_script_result is succeeded | ternary(hetzner_install_script_result.stdout_lines, hetzner_install_script_result.stderr_lines) }}'
       when: hetzner_install_script_result is defined
     # Remove script if sent
     - name: Removing installation script file
@@ -86,13 +86,13 @@
 # The partition should have been created by install_ignition.sh
 - name: Choose config partition
   ansible.builtin.set_fact:
-    hetzner_install_ignition_partition: {{ partitions[-1] }}
+    hetzner_install_ignition_partition: '{{ partitions[-1] }}'
   vars:
-    partitions: {{ ansible_facts.devices[hetzner_install_installation_drive].partitions.keys() | sort }}
+    partitions: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions.keys() | sort }}'
 
 - name: Formatting the config partition
   community.general.filesystem:
-    dev: {{ ('/dev/', hetzner_install_ignition_partition) | path_join }}
+    dev: '{{ (''/dev/'', hetzner_install_ignition_partition) | path_join }}'
     fstype: ext4
     opts: -L ignition
     state: present
@@ -102,7 +102,7 @@
     # Mount config partition
     - name: Mounting the last partition
       ansible.posix.mount:
-        src: {{ ('/dev/', hetzner_install_ignition_partition) | path_join }}
+        src: '{{ (''/dev/'', hetzner_install_ignition_partition) | path_join }}'
         fstype: ext4
         path: /mnt/ignition
         state: mounted
@@ -120,7 +120,7 @@
         - name: Templating Butane config
           ansible.builtin.template:
             src: ignition_file.bu.j2
-            dest: {{ hetzner_install_butane_config.path }}
+            dest: '{{ hetzner_install_butane_config.path }}'
             mode: 0444
         # Transpile Butane config to get Ignition json
         - name: Transpiling Butane config
@@ -130,7 +130,7 @@
             rm: true
             image: quay.io/coreos/butane:release
             volume:
-              - {{ hetzner_install_butane_config.path }}:/config.bu
+              - '{{ hetzner_install_butane_config.path }}:/config.bu'
             command: --strict /config.bu
             name: butane
           register: hetzner_install_ignition_config
@@ -138,7 +138,7 @@
         # Remove temporary file if created
         - name: Removing temporary files
           ansible.builtin.file:
-            path: {{ hetzner_install_butane_config.path }}
+            path: '{{ hetzner_install_butane_config.path }}'
             state: absent
           when: hetzner_install_butane_config is defined
 
@@ -151,7 +151,7 @@
     # Write the ignition config in /ignition/config.ign
     - name: Writing ignition config
       ansible.builtin.copy:
-        content: {{ hetzner_install_ignition_config.stdout | string }}
+        content: '{{ hetzner_install_ignition_config.stdout | string }}'
         dest: /mnt/ignition/ignition/config.ign
         mode: 0644
 
@@ -177,7 +177,7 @@
 # We have a very short timeout and ignore errors because sshd may be listening to another port
 - name: Rebooting to disk
   ansible.builtin.reboot:
-    msg: 'Rebooting to disk'
+    msg: Rebooting to disk
     connect_timeout: 1
     reboot_timeout: 1
   ignore_errors: true
