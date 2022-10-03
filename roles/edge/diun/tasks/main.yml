@@ -59,13 +59,13 @@
     restart_policy: unless-stopped
     env:
       TZ: Europe/Rome
-      DIUN_WATCH_WORKERS: 2
+      DIUN_WATCH_WORKERS: '2'
       DIUN_WATCH_SCHEDULE: 0 20 * * *
       DIUN_PROVIDERS_DOCKER: 'true'
       DIUN_PROVIDERS_DOCKER_ENDPOINT: tcp://socket-proxy:2375
       DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: 'true'
-      DIUN_NOTIF_TELEGRAM_TOKEN: '{{ diun_telegram_bot_token }}'
-      DIUN_NOTIF_TELEGRAM_CHATIDS: '{{ diun_telegram_chat_ids }}'
+      DIUN_NOTIF_TELEGRAM_TOKEN: '{{ diun_telegram_bot_token | string }}'
+      DIUN_NOTIF_TELEGRAM_CHATIDS: '{{ diun_telegram_chat_ids | string }}'
     networks:
       - name: diun
       - name: diun-outside
