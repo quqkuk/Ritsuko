@@ -87,13 +87,16 @@
 # The partition should have been created by install_ignition.sh
 - name: Choose config partition
   ansible.builtin.set_fact:
-    hetzner_install_ignition_partition: '{{ partitions[-1] }}'
+    #TODO: Try to use labels
+    hetzner_install_config_partition: '{{ partitions[-1] }}'
+    hetzner_install_swap_partition: '{{ partitions[-2] }}'
+    hetzner_install_spare_partition: '{{ partitions[3] }}'
   vars:
     partitions: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions.keys() | sort }}'
 
 - name: Formatting the config partition
   community.general.filesystem:
-    dev: '{{ (''/dev/'', hetzner_install_ignition_partition) | path_join }}'
+    dev: '{{ (''/dev/'', hetzner_install_config_partition) | path_join }}'
     fstype: ext4
     opts: -L ignition
     state: present
@@ -103,9 +106,9 @@
     # Mount config partition
     - name: Mounting the last partition
       ansible.posix.mount:
-        src: '{{ (''/dev/'', hetzner_install_ignition_partition) | path_join }}'
+        src: '{{ (''/dev/'', hetzner_install_config_partition) | path_join }}'
         fstype: ext4
-        path: /mnt/ignition
+        path: /mnt/config
         state: mounted
 
     # Locally generate Ignition config from Butane template
@@ -119,6 +122,10 @@
             suffix: '.bu'
           register: hetzner_install_butane_config
         - name: Templating Butane config
+          vars:
+            config_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_config_partition] }}'
+            swap_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_swap_partition] }}'
+            spare_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_spare_partition] }}'
           ansible.builtin.template:
             src: ignition_file.bu.j2
             dest: '{{ hetzner_install_butane_config.path }}'
@@ -145,7 +152,7 @@
 
     - name: Create ignition folder
       ansible.builtin.file:
-        path: /mnt/ignition/ignition
+        path: /mnt/config/ignition
         state: directory
         mode: 0755
 
@@ -153,25 +160,25 @@
     - name: Writing ignition config
       ansible.builtin.copy:
         content: '{{ hetzner_install_ignition_config.stdout | string }}'
-        dest: /mnt/ignition/ignition/config.ign
+        dest: /mnt/config/ignition/config.ign
         mode: 0644
 
     - name: Create combustion folder
       ansible.builtin.file:
-        path: /mnt/ignition/combustion
+        path: /mnt/config/combustion
         state: directory
         mode: 0755
 
     - name: Add script file
       ansible.builtin.template:
         src: combustion_script.j2
-        dest: /mnt/ignition/combustion/script
+        dest: /mnt/config/combustion/script
         mode: 0744
   always:
     # Unmount the config partition if mounted
     - name: Unmounting the last partition
       ansible.posix.mount:
-        path: /mnt/ignition
+        path: /mnt/config
         state: absent
 
 # Reboot to disk (reboots deactivate hetzner's recovery environment)

@@ -9,6 +9,9 @@ storage:
         - number: 6
           should_exist: False
           wipe_partition_entry: True
+        - number: 4
+          resize: True
+          size_mib: {{ (swap_partition_details['start'] | int - spare_partition_details['start'] | int)*(swap_partition_details['sectorsize'] | int)/(1024**2) }}
         - number: 5
           resize: True
           size_mib: 0
