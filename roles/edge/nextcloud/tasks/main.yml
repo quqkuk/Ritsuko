@@ -174,9 +174,10 @@
         #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
         #- files:/var/www/onlyoffice/documentserver-example/public/files
 
-- name: Enabling per-user key encryption 
-  community.docker.docker_container_exec:
-    container: nextcloud
-    user: www-data
-    chdir: /var/www/html
-    command: php ./occ encryption:disable-master-key
+#TODO: This won't work until Nextcloud has been through the first-time setup. It also might not be idempotent
+#- name: Enabling per-user key encryption 
+#  community.docker.docker_container_exec:
+#    container: nextcloud
+#    user: www-data
+#    chdir: /var/www/html
+#    command: php ./occ encryption:disable-master-key
