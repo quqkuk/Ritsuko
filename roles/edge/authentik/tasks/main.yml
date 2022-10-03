@@ -147,6 +147,13 @@
         source: '{{ (authentik_data_folder, "certs") | path_join }}'
         target: /certs
 
+- name: Ensuring authentik outside network exists
+  community.docker.docker_network:
+    name: authentik-outside
+    driver: bridge
+    internal: false
+    state: present
+
 - name: Create Authentik container
   community.docker.docker_container:
     name: authentik
@@ -161,6 +168,7 @@
       - name: authentik
         aliases:
           - authentik
+      - name: authentik-outside
       - name: '{{ reverse_proxy_network }}'
     mounts:
       - type: bind
