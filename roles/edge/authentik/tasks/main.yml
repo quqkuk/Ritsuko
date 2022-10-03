@@ -136,8 +136,6 @@
       AUTHENTIK_AVATARS: 'attributes.avatar'
     networks:
       - name: authentik
-        aliases:
-          - worker
     mounts:
       - type: bind
         source: '{{ (authentik_data_folder, "media") | path_join }}'
