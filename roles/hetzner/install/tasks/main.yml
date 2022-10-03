@@ -2,22 +2,22 @@
 # This should not run if the VM is not available on the default port, as the fact gathering fails
 # thus, we can proceed with putting the VM in recovery mode without worrying that the OS will be re-installed even if not needed
 
-- name: Upload ssh pubkey
-  hetzner.hcloud.hcloud_ssh_key:
-    api_token: '{{ hetzner_api_token }}'
-    name: 'ansible-{{ inventory_hostname }}'
-    fingerprint: '{{ lookup("ansible.builtin.pipe", ''ssh-keygen -l -E md5 -f ''+ansible_ssh_private_key_file+''.pub | sed ''''s/.*MD5:\([a-zA-Z0-9:]*\).*/\1/'''''') }}'
-    public_key: '{{ lookup("ansible.builtin.file", ansible_ssh_private_key_file+".pub") }}'
-    state: present
-  register: hetzner_install_ssh_key
-
-- name: Put server in recovery mode
-  hetzner.hcloud.hcloud_server:
-    api_token: '{{ hetzner_api_token }}'
-    name: '{{ inventory_hostname }}'
-    rescue_mode: linux64
-    ssh_keys:
-      - 'ansible-{{ inventory_hostname }}'
+#- name: Upload ssh pubkey
+#  hetzner.hcloud.hcloud_ssh_key:
+#    api_token: '{{ hetzner_api_token }}'
+#    name: 'ansible-{{ inventory_hostname }}'
+#    fingerprint: '{{ lookup("ansible.builtin.pipe", ''ssh-keygen -l -E md5 -f ''+ansible_ssh_private_key_file+''.pub | sed ''''s/.*MD5:\([a-zA-Z0-9:]*\).*/\1/'''''') }}'
+#    public_key: '{{ lookup("ansible.builtin.file", ansible_ssh_private_key_file+".pub") }}'
+#    state: present
+#  register: hetzner_install_ssh_key
+#
+#- name: Put server in recovery mode
+#  hetzner.hcloud.hcloud_server:
+#    api_token: '{{ hetzner_api_token }}'
+#    name: '{{ inventory_hostname }}'
+#    rescue_mode: linux64
+#    ssh_keys:
+#      - 'ansible-{{ inventory_hostname }}'
 
 - name: Waiting for server to come back up online after reboot
   ansible.builtin.wait_for_connection: {}
