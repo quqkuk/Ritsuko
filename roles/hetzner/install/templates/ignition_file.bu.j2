@@ -5,13 +5,13 @@ storage:
     # Hopefully the disk file stays the same
     - device: {{ ("/dev/", hetzner_install_installation_drive) | path_join }}
       partitions:
-        - number: 5
+        #TODO: Get partition number from `hetzner_install_ignition_partition` variable
+        - number: 6
           should_exist: False
           wipe_partition_entry: True
-        - number: 3
+        - number: 5
           resize: True
           size_mib: 0
-        # TODO: Create SWAP Partition
   files:
     - path: /etc/ssh/sshd_config.d/90-change-port.conf
       overwrite: true

@@ -107,3 +107,6 @@ sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/sna
 
 # Uninstall semanage
 zypper --non-interactive remove policycoreutils-python-utils
+
+#TODO: Filter by disk before looking for the swap partition
+printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*/\1/') none swap defaults 0 0" >> /etc/fstab
