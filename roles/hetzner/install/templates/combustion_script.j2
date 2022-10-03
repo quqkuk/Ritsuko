@@ -20,7 +20,7 @@ sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1)){s/$/,/
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
-# Create User (ignition should set sudo up automatically)
+# Create User (ignition should have set sudo up automatically)
 useradd --create-home -G docker {{ hetzner_install_ansible_user }}
 SSH_FOLDER="{{ ("/home/", hetzner_install_ansible_user, ".ssh") | path_join }}"
 mkdir -pm700 "$SSH_FOLDER"
@@ -38,16 +38,17 @@ sed -i '/^GRUB_TIMEOUT=/s/\([0-9]\+\)$/2/' /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
 # Creating subvolume and adding config to snapper
-SUBVOLUME_PATH="{{ ("/home/", hetzner_install_ansible_user, "volumes") | path_join }}"
+mount /dev/disk/by-label/SPARE /mnt
+SUBVOLUME_PATH="{{ ("/mnt/", "container-volumes") | path_join }}"
 btrfs -q subvolume create "$SUBVOLUME_PATH"
 btrfs -q property set "$SUBVOLUME_PATH" compression zstd
 btrfs quota enable "$SUBVOLUME_PATH"
 chown --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SUBVOLUME_PATH"
-btrfs -q subvolume create "{{ ("/home/", hetzner_install_ansible_user, "volumes", ".snapshots") | path_join }}"
+btrfs -q subvolume create "{{ ("/mnt/", "container-volumes", ".snapshots") | path_join }}"
 
 cat > /etc/snapper/configs/container-volumes <<-EOF
 	# subvolume to snapshot
-	SUBVOLUME="$SUBVOLUME_PATH"
+	SUBVOLUME="{{ ("/var/", "container-volumes") | path_join }}"
 	
 	# qgroup of the subvolume
 	QGROUP="$(btrfs subvolume show $SUBVOLUME_PATH | grep Quota | cut -f4)"
@@ -103,6 +104,7 @@ cat > /etc/snapper/configs/container-volumes <<-EOF
 	EOF
 
 umount /home
+umount /mnt
 sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/snapper
 
 # Uninstall semanage
