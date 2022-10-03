@@ -32,9 +32,12 @@
       ansible.builtin.set_fact:
         ansible_port: '{{ hetzner_install_ansible_port }}'
         ansible_user: '{{ hetzner_install_ansible_user }}'
-    #TODO: Fix this
     - name: Waiting for server to come back up online after reboot
       ansible.builtin.wait_for_connection: {}
+    - name: Rebooting to new snapshot and refreshing partition table
+      become: true
+      ansible.builtin.reboot:
+        msg: Rebooting to new snapshot
 
 - name: Managing containers on the Magisystem
   hosts: edge
