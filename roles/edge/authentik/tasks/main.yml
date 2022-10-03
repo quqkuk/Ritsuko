@@ -20,7 +20,7 @@
         mode: 0700
         owner: 101000
         group: 101000
-      when: authentik_database_folder is failed
+      when: not (authentik_database_folder | community.general.json_query('stat.exists'))
     
     - name: Ensuring worker media folder exists
       become: true
