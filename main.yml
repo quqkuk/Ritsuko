@@ -15,6 +15,12 @@
       ansible.builtin.meta: end_host
       when: hetzner_connected is not failed
 
+    - name: Setting ssh port and username role parameters
+      ansible.builtin.set_fact:
+        hetzner_install_ansible_user: '{{ ansible_user }}'
+        hetzner_install_ansible_port: '{{ ansible_port }}'
+      when: (hetzner_install_ansible_user is undefined) || (hetzner_install_ansible_port is undefined)
+
     - name: Setting default ssh port and username
       ansible.builtin.set_fact:
         ansible_port: 22
