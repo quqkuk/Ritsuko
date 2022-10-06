@@ -2,6 +2,7 @@
 # This should not run if the VM is not available on the default port, as the fact gathering fails
 # thus, we can proceed with putting the VM in recovery mode without worrying that the OS will be re-installed even if not needed
 
+#TODO: Refactor this file
 #- name: Upload ssh pubkey
 #  hetzner.hcloud.hcloud_ssh_key:
 #    api_token: '{{ hetzner_api_token }}'
