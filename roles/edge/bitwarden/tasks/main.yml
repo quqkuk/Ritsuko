@@ -143,9 +143,6 @@
       - name: ldap
     mounts:
       - type: bind
-        source: '{{ (bitwarden_data_folder, "state") | path_join }}'
-        target: /data
-      - type: bind
         source: '{{ bitwarden_ldap_config_file }}'
         target: /config.toml
         read_only: true
