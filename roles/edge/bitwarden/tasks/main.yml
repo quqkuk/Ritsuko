@@ -43,6 +43,7 @@
         mode: 0744
         owner: 101000
         group: 101000
+      register: bitwarden_ldap_config_template
 
 - name: Ensuring Bitwarden network exists
   community.docker.docker_network:
@@ -135,6 +136,7 @@
     image: vividboarder/vaultwarden_ldap
     keep_volumes: false
     restart_policy: unless-stopped
+    restart: '{{ bitwarden_ldap_config_template is changed }}'
     env:
       CONFIG_PATH: /config.toml
       #RUST_BACKTRACE: '1'
