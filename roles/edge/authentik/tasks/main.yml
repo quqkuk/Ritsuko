@@ -188,7 +188,7 @@
 
 - name: Create Authentik LDAP Outpost container
   community.docker.docker_container:
-    name: authentik
+    name: authentik-ldap
     image: ghcr.io/goauthentik/ldap
     command: server
     keep_volumes: false
