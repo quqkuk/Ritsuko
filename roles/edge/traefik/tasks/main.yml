@@ -23,7 +23,7 @@
         mode: 0444
         owner: 100000
         group: 100000
-      register: edge_containers_traefik_static_config
+      register: traefik_static_config
     
     #TODO: Consider using rsync
     - name: Copy Traefik's dynamic file configs
@@ -74,7 +74,7 @@
     image: traefik
     keep_volumes: false
     restart_policy: unless-stopped
-    restart: '{{ edge_containers_traefik_static_config is changed }}'
+    restart: '{{ traefik_static_config is changed }}'
     mounts:
       - type: bind
         source: '{{ (traefik_config_folder, "traefik.yml") | path_join }}'
