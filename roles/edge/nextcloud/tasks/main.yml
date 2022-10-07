@@ -173,6 +173,11 @@
         #- "$HOME/volumes/nextcloud/onlyoffice/fonts:/usr/share/fonts"
         #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
         #- files:/var/www/onlyoffice/documentserver-example/public/files
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.onlyoffice.entryPoints: https
+      traefik.http.routers.onlyoffice.rule: Host(`office.magisystem.xyz`)
+      traefik.http.services.onlyoffice.loadbalancer.server.port: '80'
 
 #TODO: This won't work until Nextcloud has been through the first-time setup. It also might not be idempotent
 #- name: Enabling per-user key encryption 
