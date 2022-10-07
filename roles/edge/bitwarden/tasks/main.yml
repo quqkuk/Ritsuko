@@ -102,6 +102,8 @@
       SMTP_SECURITY: '{{ mail_server["use_ssl"] | bool | ternary("force_tls", mail_server["use_tls"] | bool | ternary("starttls", "off")) }}'
       SMTP_USERNAME: '{{ mail_server["username"] }}'
       SMTP_PASSWORD: '{{ mail_server["password"] }}'
+      DOMAIN: https://bwarden.magisystem.xyz
+      INVITATION_ORG_NAME: Magisystem
     networks:
       - name: bwarden
         aliases:
