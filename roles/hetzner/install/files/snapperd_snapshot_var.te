@@ -1,0 +1,12 @@
+module snapperd_snapshot_var 1.0;
+
+require {
+	type var_t;
+	type snapperd_t;
+	class dir create;
+	class file { create write rename };
+}
+
+#============= snapperd_t ==============
+allow snapperd_t var_t:dir create;
+allow snapperd_t var_t:file { create write rename };
