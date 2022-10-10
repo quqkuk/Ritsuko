@@ -142,6 +142,8 @@
     entrypoint: /cron.sh
     keep_volumes: false
     restart_policy: unless-stopped
+    networks:
+      - name: nextcloud
     mounts:
       - type: bind
         source: '{{ (nextcloud_data_folder, "app") | path_join }}'
