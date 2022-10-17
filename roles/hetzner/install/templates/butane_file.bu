@@ -5,14 +5,16 @@ storage:
     # Hopefully the disk file stays the same
     - device: /template_installation_drive
       partitions:
-        #TODO: Get partition number from `hetzner_install_ignition_partition` variable
-        - number: 6
+          # Config Partition
+        - number: 1
           should_exist: False
           wipe_partition_entry: True
-        - number: 4
+          # Spare Partition
+        - number: 2
           resize: True
           size_mib: 1234567890
-        - number: 5
+          # Swap Partition
+        - number: 3
           resize: True
           size_mib: 0
   files:
