@@ -22,5 +22,5 @@ parted -s "$1" mkpart primary linux-swap "${SWAP_START}MiB" "${SWAP_END}MiB"
 parted -s "$1" mkpart primary ext4 "${SWAP_END}MiB" 100%
 partprobe "$1" && udevadm settle
 
-#TODO: We can rely on this being the 5th partition, but we shouldn't
+#TODO: We can rely on this being the 5th partition for now, but we probably shouldn't
 mkswap "${1}5"

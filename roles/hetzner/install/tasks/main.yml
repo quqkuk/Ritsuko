@@ -23,8 +23,7 @@
 - name: Waiting for server to come back up online after reboot
   ansible.builtin.wait_for_connection: {}
 
-# WARNING: THIS IS STILL UNTESTED, Everything else in this role is known to work but this task
-# TODO: Check whether apt-get is idempotent and returns 0 if package is already installed
+# TODO: Make this task idempotent
 - name: Installing Python
   ansible.builtin.raw: 'apt-get -y -q update && apt-get -y -q install python3'
   register: hetzner_install_install_python_result
@@ -112,45 +111,6 @@
         path: /mnt/config
         state: mounted
 
-    # Locally generate Ignition config from Butane template
-    - name: Generate Ignition config
-      delegate_to: localhost
-      connection: local
-      block:
-        # Create temporary file where to put the templated config
-        - name: Creating temporary file to host templated config
-          ansible.builtin.tempfile:
-            suffix: '.bu'
-          register: hetzner_install_butane_config
-        - name: Templating Butane config
-          vars:
-            config_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_config_partition] }}'
-            swap_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_swap_partition] }}'
-            spare_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_spare_partition] }}'
-          ansible.builtin.template:
-            src: ignition_file.bu.j2
-            dest: '{{ hetzner_install_butane_config.path }}'
-            mode: 0444
-        # Transpile Butane config to get Ignition json
-        - name: Transpiling Butane config
-          containers.podman.podman_container:
-            interactive: true
-            detach: false
-            rm: true
-            image: quay.io/coreos/butane:release
-            volume:
-              - '{{ hetzner_install_butane_config.path }}:/config.bu'
-            command: --strict /config.bu
-            name: butane
-          register: hetzner_install_ignition_config
-      always:
-        # Remove temporary file if created
-        - name: Removing temporary files
-          ansible.builtin.file:
-            path: '{{ hetzner_install_butane_config.path }}'
-            state: absent
-          when: hetzner_install_butane_config is defined
-
     - name: Create ignition folder
       ansible.builtin.file:
         path: /mnt/config/ignition
@@ -158,11 +118,15 @@
         mode: 0755
 
     # Write the ignition config in /ignition/config.ign
-    - name: Writing ignition config
-      ansible.builtin.copy:
-        content: '{{ hetzner_install_ignition_config.stdout | string }}'
-        dest: /mnt/config/ignition/config.ign
-        mode: 0644
+    - name: Templating Ignition config
+      vars:
+        config_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_config_partition] }}'
+        swap_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_swap_partition] }}'
+        spare_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_spare_partition] }}'
+      ansible.builtin.template:
+        src: ignition_file.ign.j2
+        dest: '{{ hetzner_install_butane_config.path }}'
+        mode: 0444
 
     - name: Create combustion folder
       ansible.builtin.file:
@@ -191,4 +155,4 @@
     reboot_timeout: 1
   ignore_errors: true
   #TODO: Maybe the registered value can let us discern whether we've failed to reboot or not
-  # we don't care about the machine coming up because it may be on a different port
+  # we don't care about the machine coming up because it is probably going to be on a different port
