@@ -59,9 +59,26 @@
   roles:
     - role: edge/setup
     - role: edge/traefik
+      tags:
+        - reverse-proxy
+        - traefik
     - role: edge/authentik
+      tags:
+        - auth
+        - authentik
     - role: edge/nextcloud
+      tags:
+        - cloud
+        - nextcloud
     - role: edge/bitwarden
+      tags:
+        - password
+        - bitwarden
+        - vaultwarden
       when: authentik_ldap_token is defined
     - role: edge/firefox-sync
+      tags:
+        - firefox-sync
     - role: edge/diun
+      tags:
+        - diun
