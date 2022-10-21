@@ -87,7 +87,6 @@
     internal: false
     state: present
 
-#TODO: Enable mail
 - name: Create Nextcloud container
   community.docker.docker_container:
     name: nextcloud
