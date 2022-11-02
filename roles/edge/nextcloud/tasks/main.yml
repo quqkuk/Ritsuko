@@ -87,6 +87,7 @@
     internal: false
     state: present
 
+#TODO: Configure onlyoffice to work through internal networks
 - name: Create Nextcloud container
   community.docker.docker_container:
     name: nextcloud
@@ -113,6 +114,8 @@
       MAIL_FROM_ADDRESS: '{{ nextcloud_mail_from | default("") }}'
     networks:
       - name: nextcloud
+        aliases:
+          - cloud
       - name: nextcloud-outside
       - name: '{{ reverse_proxy_network }}'
     mounts:
@@ -165,15 +168,21 @@
       JWT_IN_BODY: 'true'
     networks:
       - name: '{{ reverse_proxy_network }}'
+      - name: nextcloud
+        aliases:
+          - docs
+      - name: nextcloud-outside
     mounts:
       - type: bind
         source: /etc/localtime
         target: /etc/localtime
         read_only: true
-        #- "$HOME/volumes/nextcloud/onlyoffice/data:/var/www/onlyoffice/Data"
-        #- "$HOME/volumes/nextcloud/onlyoffice/fonts:/usr/share/fonts"
-        #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
-        #- files:/var/www/onlyoffice/documentserver-example/public/files
+      #- type: bind
+      #  source: '{{ (nextcloud_data_folder, "document") | path_join }}'
+      #  target: /var/www/onlyoffice/Data
+      #- "$HOME/volumes/nextcloud/onlyoffice/fonts:/usr/share/fonts"
+      #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+      #- files:/var/www/onlyoffice/documentserver-example/public/files
     labels:
       traefik.enable: 'true'
       traefik.http.routers.onlyoffice.entryPoints: https
