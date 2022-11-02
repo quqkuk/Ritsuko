@@ -102,7 +102,7 @@ cat > /etc/snapper/configs/container-volumes <<-EOF
 	
 	# limits for empty pre-post-pair cleanup
 	EMPTY_PRE_POST_MIN_AGE="0"
-	EOF
+EOF
 
 umount /home
 umount /mnt
@@ -112,6 +112,13 @@ sed -i '/^BTRFS_BALANCE_MOUNTPOINTS/s$"\(.*\)"$"\1,/var"$' /etc/sysconfig/btrfsm
 
 # Uninstall semanage
 zypper --non-interactive remove policycoreutils-python-utils
+
+mkdir -p /etc/systemd/system/snapper-cleanup.timer.d
+cat > /etc/systemd/system/snapper-cleanup.timer.d/override.conf <<-EOF
+	[Timer]
+	OnUnitActiveSec=
+	OnUnitActiveSec=1h
+EOF
 
 #TODO: Filter by disk before looking for the swap partition
 printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*/\1/') none swap defaults 0 0" >> /etc/fstab
