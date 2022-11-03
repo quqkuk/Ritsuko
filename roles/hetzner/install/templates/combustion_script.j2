@@ -108,7 +108,7 @@ umount /home
 umount /mnt
 sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/snapper
 
-sed -i '/^BTRFS_BALANCE_MOUNTPOINTS/s$"\(.*\)"$"\1,/var"$' /etc/sysconfig/btrfsmaintenance
+sed -i '/^BTRFS_BALANCE_MOUNTPOINTS/s$"\(.*\)"$"\1:/var"$' /etc/sysconfig/btrfsmaintenance
 
 # Uninstall semanage
 zypper --non-interactive remove policycoreutils-python-utils
