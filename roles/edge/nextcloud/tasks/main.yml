@@ -36,6 +36,20 @@
         group: 101000
       when: not (nextcloud_application_folder | community.general.json_query('stat.exists'))
 
+    #- name: Checking document folder exists
+    #  ansible.builtin.stat:
+    #    path: '{{ (nextcloud_data_folder, "document") | path_join }}'
+    #  register: nextcloud_document_folder
+
+    #- name: Creating document folder
+    #  ansible.builtin.file:
+    #    path: '{{ (nextcloud_data_folder, "document") | path_join }}'
+    #    state: directory
+    #    mode: 0700
+    #    owner: 101000
+    #    group: 101000
+    #  when: not (nextcloud_document_folder | community.general.json_query('stat.exists'))
+
 - name: Ensuring Nextcloud network exists
   community.docker.docker_network:
     name: nextcloud
