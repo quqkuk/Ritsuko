@@ -1,0 +1,37 @@
+---
+- name: Creating RSS-Bridge config file
+  become: true
+  ansible.builtin.template:
+    src: rssbridge
+    dest: '{{ rssbridge_config_file }}'
+    mode: 0744
+    owner: 101000
+    group: 101000
+  register: rssbridge_config_template
+
+- name: Ensuring RSS-Bridge network exists
+  community.docker.docker_network:
+    name: rssbridge
+    driver: bridge
+    internal: false
+    state: present
+
+- name: Create RSS-Bridge container
+  community.docker.docker_container:
+    name: rssbridge
+    image: rssbridge/rss-bridge
+    keep_volumes: false
+    restart_policy: unless-stopped
+    restart: '{{ rssbridge_config_template is changed }}'
+    networks:
+      - name: rssbridge
+    mounts:
+      - type: bind
+        source: '{{ rssbridge_config_file }}'
+        target: /config
+        read_only: true
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.onlyoffice.entryPoints: https
+      traefik.http.routers.onlyoffice.rule: Host(`rss.magisystem.xyz`)
+      traefik.http.services.onlyoffice.loadbalancer.server.port: '3000'

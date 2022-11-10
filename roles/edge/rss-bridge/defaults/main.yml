@@ -1,0 +1,3 @@
+---
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+rssbridge_config_file: '{{ (container_config_folder | mandatory, "rssbridge-config") | path_join }}'
