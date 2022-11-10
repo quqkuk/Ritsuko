@@ -101,7 +101,7 @@
     internal: false
     state: present
 
-#TODO: Configure onlyoffice to work through internal networks
+#TODO: Run sed -i '/0 => '"'"'cloud.magisystem.xyz'"'"'/a \ \ \ \ 1 => '"'"'cloud'"'"'' config/config.php with blockinfile
 - name: Create Nextcloud container
   community.docker.docker_container:
     name: nextcloud
