@@ -116,11 +116,7 @@ zypper --non-interactive remove policycoreutils-python-utils
 
 mkdir -p /etc/systemd/system/snapper-cleanup.timer.d
 cat > /etc/systemd/system/snapper-cleanup.timer.d/override.conf <<-EOF
-	[Unit]
-	After=snapper-timeline.service
-	
 	[Timer]
-	OnUnitActiveSec=
 	OnUnitActiveSec=1h
 EOF
 
