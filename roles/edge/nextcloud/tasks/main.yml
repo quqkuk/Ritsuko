@@ -102,6 +102,7 @@
     state: present
 
 #TODO: Run sed -i '/0 => '"'"'cloud.magisystem.xyz'"'"'/a \ \ \ \ 1 => '"'"'cloud'"'"'' config/config.php with blockinfile
+#TODO: change trusted_proxies with blockinfile
 - name: Create Nextcloud container
   community.docker.docker_container:
     name: nextcloud
@@ -118,6 +119,8 @@
       #APACHE_DISABLE_REWRITE_IP=1
       #OVERWRITEHOST=cloud.magisystem.xyz
       OVERWRITEPROTOCOL: https
+      NEXTCLOUD_TRUSTED_DOMAINS: cloud.magisystem.xyz
+      TRUSTED_PROXIES: '{{ reverse_proxy_network_subnet }}'
       REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
       SMTP_HOST: '{{ mail_server["host"] }}'
       SMTP_SECURE: '{{ mail_server["use_ssl"] | bool | ternary("ssl", mail_server["use_tls"] | bool | ternary("tls", "")) }}'

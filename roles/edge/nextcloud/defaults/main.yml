@@ -1,5 +1,6 @@
 ---
 reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+reverse_proxy_network_subnet: '{{ undef(hint="Reverse Proxy Docker network subnet") }}'
 nextcloud_data_folder: '{{ (container_volumes_folder | mandatory, "nextcloud") | path_join }}'
 nextcloud_redis_password: '{{ undef(hint="Nextcloud''s Redis password") }}'
 nextcloud_database_password: '{{ undef(hint="Nextcloud''s database password") }}'
