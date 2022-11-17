@@ -111,9 +111,6 @@ sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/sna
 sed -i -e '/^BTRFS_BALANCE_MOUNTPOINTS/s$"\(.*\)"$"\1:/var"$' \
 	-e '/^BTRFS_BALANCE_\(D\|M\)USAGE/s$"\(.*\)"$"50"$' /etc/sysconfig/btrfsmaintenance
 
-# Uninstall semanage
-zypper --non-interactive remove policycoreutils-python-utils
-
 mkdir -p /etc/systemd/system/snapper-cleanup.timer.d
 cat > /etc/systemd/system/snapper-cleanup.timer.d/override.conf <<-EOF
 	[Timer]
@@ -122,3 +119,6 @@ EOF
 
 #TODO: Filter by disk before looking for the swap partition
 printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*/\1/') none swap defaults 0 0" >> /etc/fstab
+
+# Uninstall semanage
+zypper --non-interactive remove policycoreutils-python-utils
