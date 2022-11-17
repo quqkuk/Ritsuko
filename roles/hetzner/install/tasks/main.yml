@@ -145,6 +145,12 @@
         src: combustion_script.j2
         dest: /mnt/config/combustion/script
         mode: 0744
+
+    - name: Copy selinux policy
+      ansible.builtin.copy:
+        src: snapperd_snapshot_var.pp
+        dest: /mnt/config/combustion/snapperd_snapshot_var.pp
+        mode: 0744
   always:
     # Unmount the config partition if mounted
     - name: Unmounting the last partition

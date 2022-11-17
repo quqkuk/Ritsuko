@@ -35,7 +35,9 @@ chown -R --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}
 #-------- Selinux
 # Add port to selinux
 semanage port --add -t ssh_port_t -p tcp {{ hetzner_install_ansible_port }}
-#TODO: Append snapper_snapshot_var.pp to the end of the file. At boot time put the policy at the end in a temp file and install it
+# Installing selinux policy to snapshot /var[/container-volumes]
+#Assuming current working directory is /combustion
+semodule -i ./snapper_snapshot_var.pp
 
 # Changing GRUB Timeout
 sed -i '/^GRUB_TIMEOUT=/s/\([0-9]\+\)$/2/' /etc/default/grub
