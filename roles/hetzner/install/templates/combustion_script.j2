@@ -113,8 +113,9 @@ umount /home
 umount /mnt
 sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/snapper
 
-sed -i -e '/^BTRFS_BALANCE_MOUNTPOINTS/s$"\(.*\)"$"\1:/var"$' \
-	-e '/^BTRFS_BALANCE_\(D\|M\)USAGE/s$"\(.*\)"$"50"$' /etc/sysconfig/btrfsmaintenance
+sed -i \
+	-e '/^BTRFS_BALANCE_MOUNTPOINTS/s$"\(.*\)"$"\1:/var"$' \
+	-e '/^BTRFS_BALANCE_\(D\|M\)USAGE/s/".*"/"50"/' /etc/sysconfig/btrfsmaintenance
 
 mkdir -p /etc/systemd/system/snapper-cleanup.timer.d
 cat > /etc/systemd/system/snapper-cleanup.timer.d/override.conf <<-EOF

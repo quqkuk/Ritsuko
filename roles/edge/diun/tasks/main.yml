@@ -12,8 +12,8 @@
         path: '{{ diun_data_folder }}'
         state: directory
         mode: 0700
-        owner: 101000
-        group: 101000
+        owner: 100000
+        group: 100000
       when: not (diun_data_folder_stat | community.general.json_query('stat.exists'))
 
 - name: Ensuring DIUN network exists
@@ -72,4 +72,4 @@
     mounts:
       - type: bind
         source: '{{ diun_data_folder }}'
-        target: /var/www/html
+        target: /data
