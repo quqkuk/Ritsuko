@@ -131,7 +131,7 @@
         spare_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_spare_partition] }}'
       ansible.builtin.template:
         src: ignition_file.ign.j2
-        dest: '{{ hetzner_install_butane_config.path }}'
+        dest: /mnt/config/ignition
         mode: 0444
 
     - name: Create combustion folder
