@@ -58,6 +58,10 @@
       timeout: '{{ mail_server_settings["timeout"] | default("30") | int | string }}'
   roles:
     - role: edge/setup
+    - role: edge/watchtower
+      tags:
+        - watchtower
+        - updates
     - role: edge/traefik
       tags:
         - reverse-proxy
@@ -66,19 +70,16 @@
       tags:
         - auth
         - authentik
-    - role: edge/nextcloud
-      tags:
-        - cloud
-        - nextcloud
     - role: edge/bitwarden
       tags:
         - password
         - bitwarden
         - vaultwarden
       when: authentik_ldap_token is defined
+    - role: edge/nextcloud
+      tags:
+        - cloud
+        - nextcloud
     - role: edge/firefox-sync
       tags:
         - firefox-sync
-    - role: edge/diun
-      tags:
-        - diun

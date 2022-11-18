@@ -119,6 +119,7 @@
         target: /etc/localtime
         read_only: true
     labels:
+      com.centurylinklabs.watchtower.depends-on: bitwarden-database
       traefik.enable: 'true'
       traefik.http.routers.bwarden-web.entryPoints: https
       traefik.http.routers.bwarden-web.rule: Host(`bwarden.magisystem.xyz`) && !PathPrefix(`/admin`)
@@ -154,3 +155,5 @@
         source: /etc/localtime
         target: /etc/localtime
         read_only: true
+    labels:
+      com.centurylinklabs.watchtower.depends-on: bitwarden

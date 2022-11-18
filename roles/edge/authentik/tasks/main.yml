@@ -106,17 +106,20 @@
         aliases:
           - database
 
-- name: Create Authentik worker container
+- name: Ensuring authentik outside network exists
+  community.docker.docker_network:
+    name: authentik-outside
+    driver: bridge
+    internal: false
+    state: present
+
+- name: Create Authentik container
   community.docker.docker_container:
-    name: authentik-worker
+    name: authentik
     image: ghcr.io/goauthentik/server
-    command: worker
+    command: server
     keep_volumes: false
     restart_policy: unless-stopped
-    ## This is optional, and can be removed. If you remove this, the following will happen
-    ## - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
-    ## - The docker socket can't be accessed anymore
-    #user: root
     env: &authentik-env
       AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: database
@@ -136,36 +139,6 @@
       AUTHENTIK_AVATARS: 'attributes.avatar'
     networks:
       - name: authentik
-    mounts:
-      - type: bind
-        source: '{{ (authentik_data_folder, "media") | path_join }}'
-        target: /media
-      - type: bind
-        source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
-        target: /templates
-      - type: bind
-        source: '{{ (authentik_data_folder, "certs") | path_join }}'
-        target: /certs
-
-- name: Ensuring authentik outside network exists
-  community.docker.docker_network:
-    name: authentik-outside
-    driver: bridge
-    internal: false
-    state: present
-
-- name: Create Authentik container
-  community.docker.docker_container:
-    name: authentik
-    image: ghcr.io/goauthentik/server
-    command: server
-    keep_volumes: false
-    restart_policy: unless-stopped
-    env: *authentik-env
-      #AUTHENTIK_PORT_HTTP: 80
-      #AUTHENTIK_PORT_HTTPS: 443
-    networks:
-      - name: authentik
         aliases:
           - authentik
       - name: authentik-outside
@@ -178,6 +151,8 @@
         source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
         target: /templates
     labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
+      com.centurylinklabs.watchtower.depends-on: authentik-redis,authentik-database
       traefik.enable: 'true'
       traefik.http.routers.authentik.entryPoints: https
       traefik.http.routers.authentik.rule: Host(`auth.magisystem.xyz`)
@@ -185,6 +160,34 @@
     #ports:
     #  - 9000:9000
     #  - 9443:9443
+
+- name: Create Authentik worker container
+  community.docker.docker_container:
+    name: authentik-worker
+    image: ghcr.io/goauthentik/server
+    command: worker
+    keep_volumes: false
+    restart_policy: unless-stopped
+    ## This is optional, and can be removed. If you remove this, the following will happen
+    ## - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
+    ## - The docker socket can't be accessed anymore
+    #user: root
+    env: *authentik-env
+    networks:
+      - name: authentik
+    mounts:
+      - type: bind
+        source: '{{ (authentik_data_folder, "media") | path_join }}'
+        target: /media
+      - type: bind
+        source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
+        target: /templates
+      - type: bind
+        source: '{{ (authentik_data_folder, "certs") | path_join }}'
+        target: /certs
+    labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
+      com.centurylinklabs.watchtower.depends-on: authentik
 
 - name: Create Authentik LDAP Outpost container
   community.docker.docker_container:
@@ -208,4 +211,7 @@
       - name: ldap
         aliases:
           - ldap
+    labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
+      com.centurylinklabs.watchtower.depends-on: authentik
   when: authentik_ldap_token is defined

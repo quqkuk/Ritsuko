@@ -101,6 +101,7 @@
         target: /etc/localtime
         read_only: true
     labels:
+      com.centurylinklabs.watchtower.depends-on: ff-sync-database
       traefik.enable: 'true'
       traefik.http.routers.firefox-sync.entryPoints: https
       traefik.http.routers.firefox-sync.rule: Host(`firefox.magisystem.xyz`)
