@@ -1,5 +1,4 @@
 ---
-reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
 diun_data_folder: '{{ (container_volumes_folder | mandatory, "diun") | path_join }}'
 diun_telegram_bot_token: '{{ undef(hint="DIUN''s Telegram Bot Token") }}'
 diun_telegram_chat_ids: '{{ undef(hint="Telegram Chat IDs that will be sent a message everytime an update is available") }}'
