@@ -184,7 +184,7 @@ sed -i \
 	-e '/^BTRFS_BALANCE_\(D\|M\)USAGE/s/".*"/"50"/' /etc/sysconfig/btrfsmaintenance
 
 mkdir -p /etc/systemd/system/snapper-cleanup.timer.d
-cat > /etc/systemd/system/snapper-cleanup.timer.d/override.conf <<-EOF
+cat > /etc/systemd/system/snapper-cleanup.timer.d/schedule.conf <<-EOF
 	[Timer]
 	OnUnitActiveSec=1h
 EOF
