@@ -96,7 +96,7 @@
     #TODO: Try to use labels
     hetzner_install_config_partition: '{{ partitions[-1] }}'
     hetzner_install_swap_partition: '{{ partitions[-2] }}'
-    hetzner_install_spare_partition: '{{ partitions[3] }}'
+    hetzner_install_data_partition: '{{ partitions[-3] }}'
   vars:
     partitions: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions.keys() | sort }}'
 
@@ -106,8 +106,9 @@
     fstype: ext4
     opts: -L ignition
     state: present
+    force: true
 
-- name: Installing Ignition and Combustion configs
+- name: Installing Combustion script
   block:
     # Mount config partition
     - name: Mounting the last partition
@@ -117,23 +118,6 @@
         path: /mnt/config
         state: mounted
 
-    - name: Create ignition folder
-      ansible.builtin.file:
-        path: /mnt/config/ignition
-        state: directory
-        mode: 0755
-
-    # Write the ignition config in /ignition/config.ign
-    - name: Templating Ignition config
-      vars:
-        config_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_config_partition] }}'
-        swap_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_swap_partition] }}'
-        spare_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_spare_partition] }}'
-      ansible.builtin.template:
-        src: ignition_file.ign.j2
-        dest: /mnt/config/ignition
-        mode: 0444
-
     - name: Create combustion folder
       ansible.builtin.file:
         path: /mnt/config/combustion
@@ -141,6 +125,10 @@
         mode: 0755
 
     - name: Add script file
+      vars:
+        config_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_config_partition] }}'
+        swap_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_swap_partition] }}'
+        data_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_data_partition] }}'
       ansible.builtin.template:
         src: combustion_script.j2
         dest: /mnt/config/combustion/script

@@ -4,22 +4,54 @@
 
 set -ex
 
-rm /etc/localtime
+#-------- Timezone
+rm /etc/localtime || true
 ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
+#-------- Partitions
+
+# Removing Config partition, Growing SWAP until end of the disk, Growing data partition to fill the empty space
+#TODO: Find a way to resize online partitions or unmount /dev/sda{2,3,4}, resize partitions and then remount,
+#might be hard due to the fact that the script is executed in a specific environment
+#mount
+DISK_PATH='{{ ('/dev/', hetzner_install_installation_drive) | path_join }}'
+PARTED_OUTPUT=$(parted -s "$DISK_PATH" unit MiB print)
+CONFIG_PART_NUMBER=$(printf "$PARTED_OUTPUT" | tail -n 1 | cut -d ' ' -f2)
+SWAP_PART=$(printf "$PARTED_OUTPUT" | tail -n 2 | head -n 1)
+SWAP_PART_NUMBER=$(printf "$SWAP_PART" | cut -d ' ' -f2)
+DATA_PART_NUMBER=$(printf "$PARTED_OUTPUT" | tail -n 3 | head -n 1 | cut -d ' ' -f2)
+DATA_PART_END=$(($(printf "$SWAP_PART" | tr -s ' ' | cut -d ' ' -f 3 | tr -d 'MiB')-1))
+parted -s "$DISK_PATH" rm "$CONFIG_PART_NUMBER" || true
+parted -s "$DISK_PATH" resizepart "$SWAP_PART_NUMBER" 100% || true
+parted -s "$DISK_PATH" resizepart "$DATA_PART_NUMBER" "${DATA_PART_END}MiB" || true
+#TODO: Resize btrfs filesystem
+partprobe "$DISK_PATH" && udevadm settle
+
+# Adding swap to fstab
+#TODO: Filter by disk before looking for the swap partition
+printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*/\1/') none swap defaults 0 0" >> /etc/fstab
+
+#-------- Docker
 # Uninstall podman
 zypper --non-interactive remove podman
 
-# Install docker python (for ansible) and selinux management tools
-zypper --non-interactive install docker python3 python3-docker policycoreutils-python-utils
+# Install docker and its python module
+zypper --non-interactive install docker
+python3 -m ensurepip
+python3 -m pip install docker
 
-## Change subuids and subgids
+# Change subuids and subgids
 sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
 
+# Forcing subuids/subgids
 sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1)){s/$/,/; a\\
   \"userns-remap\": \"dockremap\"
 }" /etc/docker/daemon.json
 
+# Enabling docker
+systemctl enable docker.service
+
+#-------- User/Authentication
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
@@ -32,25 +64,60 @@ cat > "{{ ("/home/", hetzner_install_ansible_user, ".ssh", "authorized_keys") | 
 EOF
 chown -R --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SSH_FOLDER"
 
-#-------- Selinux
+#-------- SELinux
 # Add port to selinux
 semanage port --add -t ssh_port_t -p tcp {{ hetzner_install_ansible_port }}
 # Installing selinux policy to snapshot /var[/container-volumes]
-#Assuming current working directory is /combustion
-semodule -i ./snapper_snapshot_var.pp
+#Assuming current working directory contains /combustion
+#TODO: Currently this fails with 'child process /usr/lib/selinux/hll/pp failed with code: 255. (No such file or directory)'
+semodule -i ./snapperd_snapshot_var.pp
 
 # Changing GRUB Timeout
 sed -i '/^GRUB_TIMEOUT=/s/\([0-9]\+\)$/2/' /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
+#-------- Sudoers + SSHd + Logrotate
+
+cat > /etc/sudoers.d/90-permit-user-nopasswd <<-EOF
+	# Permit passwordless sudo to template_user
+	{{ hetzner_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
+EOF
+
+echo 'Include /etc/ssh/sshd_config.d/*' >> /etc/ssh/sshd_config
+mkdir /etc/ssh/sshd_config.d || true
+
+cat > /etc/ssh/sshd_config.d/40-prohibit-root-login.conf <<-EOF
+	# Prohibiting login as root
+	PermitRootLogin no
+EOF
+
+cat > /etc/ssh/sshd_config.d/40-disable-password-authentication.conf <<-EOF
+	# Disable Password and Challenge Authentication
+	PasswordAuthentication no
+	ChallengeResponseAuthentication no
+EOF
+
+cat > /etc/ssh/sshd_config.d/90-change-port.conf <<-EOF
+	# Changing the ssh port
+	Port {{ hetzner_install_ansible_port }}
+EOF
+
+systemctl enable sshd.service
+
+sed -i '/^rotate/s/-\?[0-9]\+/0/' /etc/logrotate.conf
+
+#-------- BTRFS + Snapper
+# Mounting the correct subvolume
+mount -o subvol=/@/var /dev/disk/by-partlabel/p.lxroot /var
+
 # Creating subvolume and adding config to snapper
-mount /dev/disk/by-label/SPARE /mnt
-SUBVOLUME_PATH="{{ ("/mnt/", "container-volumes") | path_join }}"
+SUBVOLUME_PATH="{{ ("/var/", "container-volumes") | path_join }}"
 btrfs -q subvolume create "$SUBVOLUME_PATH"
 btrfs -q property set "$SUBVOLUME_PATH" compression zstd
 btrfs quota enable "$SUBVOLUME_PATH"
-chown --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SUBVOLUME_PATH"
-btrfs -q subvolume create "{{ ("/mnt/", "container-volumes", ".snapshots") | path_join }}"
+chown '--reference={{ ("/home/", hetzner_install_ansible_user) | path_join }}' "$SUBVOLUME_PATH"
+umount /home
+btrfs -q subvolume create "{{ ("/var/", "container-volumes", ".snapshots") | path_join }}"
 
 cat > /etc/snapper/configs/container-volumes <<-EOF
 	# subvolume to snapshot
@@ -109,8 +176,7 @@ cat > /etc/snapper/configs/container-volumes <<-EOF
 	EMPTY_PRE_POST_MIN_AGE="0"
 EOF
 
-umount /home
-umount /mnt
+umount /var
 sed -i '/^SNAPPER_CONFIGS/s/"\(.*\)"/"\1 container-volumes"/' /etc/sysconfig/snapper
 
 sed -i \
@@ -122,9 +188,3 @@ cat > /etc/systemd/system/snapper-cleanup.timer.d/override.conf <<-EOF
 	[Timer]
 	OnUnitActiveSec=1h
 EOF
-
-#TODO: Filter by disk before looking for the swap partition
-printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*/\1/') none swap defaults 0 0" >> /etc/fstab
-
-# Uninstall semanage
-zypper --non-interactive remove policycoreutils-python-utils
