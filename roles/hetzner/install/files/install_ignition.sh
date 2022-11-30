@@ -5,10 +5,6 @@
 set -ex
 
 # Download image and write it to disk
-#TMPIMG=$(mktemp --suffix=".qcow2")
-#curl -sL https://mirrorcache.opensuse.org/tumbleweed/appliances/openSUSE-MicroOS.x86_64-ContainerHost-kvm-and-xen.qcow2 > "$TMPIMG"
-#qemu-img convert -f qcow2 -O host_device "$TMPIMG" "$1"
-#rm "$TMPIMG"
 curl -sL 'https://download.opensuse.org/distribution/leap-micro/5.3/appliances/openSUSE-Leap-Micro.x86_64-Default.raw.xz' | \
 	xz --decompress > "$1"
 
