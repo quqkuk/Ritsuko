@@ -26,6 +26,7 @@
     env:
       CONTAINERS: '1'
       IMAGES: '1'
+      POST: '1'
 
 - name: Ensuring Watchtower bridge network exists
   community.docker.docker_network:
