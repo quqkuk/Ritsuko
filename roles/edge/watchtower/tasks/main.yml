@@ -1,9 +1,9 @@
 ---
-- name: Ensuring Watchtower network exists
+- name: Ensuring Watchtower bridge network exists
   community.docker.docker_network:
     name: watchtower
     driver: bridge
-    internal: true
+    internal: false
     state: present
 
 - name: Create socket proxy container
@@ -28,13 +28,6 @@
       IMAGES: '1'
       POST: '1'
 
-- name: Ensuring Watchtower bridge network exists
-  community.docker.docker_network:
-    name: watchtower-outside
-    driver: bridge
-    internal: false
-    state: present
-
 - name: Create Watchtower container
   community.docker.docker_container:
     name: watchtower
@@ -49,7 +42,6 @@
       WATCHTOWER_NOTIFICATION_URL: 'telegram://{{ watchtower_telegram_bot_token }}@telegram?chats={{ watchtower_telegram_chat_ids }}'
     networks:
       - name: watchtower
-      - name: watchtower-outside
     mounts:
       - type: bind
         source: /etc/localtime
