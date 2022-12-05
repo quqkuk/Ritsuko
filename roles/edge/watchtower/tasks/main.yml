@@ -26,6 +26,7 @@
     env:
       CONTAINERS: '1'
       IMAGES: '1'
+      NETWORKS: '1'
       POST: '1'
 
 - name: Create Watchtower container
