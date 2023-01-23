@@ -1,4 +1,5 @@
 ---
-reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
 traefik_config_folder: '{{ (container_config_folder | mandatory, "traefik") | path_join }}'
+traefik_volumes_folder: '{{ (container_volumes_folder | mandatory, "traefik") | path_join }}'
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
 certificate_email: '{{ undef(hint="Email to send to Let''s Encrypt") }}'

@@ -15,6 +15,20 @@
         mode: 0555
         owner: 100000
         group: 100000
+
+    - name: Ensuring traefik volumes folder exists
+      ansible.builtin.file:
+        path: '{{ traefik_volumes_folder }}'
+        state: directory
+        mode: 0555
+
+    - name: Ensuring traefik acme file exists
+      ansible.builtin.file:
+        path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
+        state: touch
+        mode: 0600
+        owner: 100000
+        group: 100000
     
     - name: Template Traefik's Static Config
       ansible.builtin.template:
@@ -84,6 +98,9 @@
         source: '{{ (traefik_config_folder, "configs") | path_join }}'
         target: /etc/traefik/configs
         read_only: true
+      - type: bind
+        source: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
+        target: /acme.json
     networks:
       - name: traefik
       - name: traefik-outside
