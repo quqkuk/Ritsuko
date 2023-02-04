@@ -104,6 +104,7 @@
       SMTP_PASSWORD: '{{ mail_server["password"] }}'
       DOMAIN: https://bwarden.magisystem.xyz
       INVITATION_ORG_NAME: Magisystem
+      PASSWORD_ITERATIONS: '600000'
     networks:
       - name: bwarden
         aliases:
