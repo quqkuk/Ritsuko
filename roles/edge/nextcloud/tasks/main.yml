@@ -36,20 +36,6 @@
         group: 101000
       when: not (nextcloud_application_folder | community.general.json_query('stat.exists'))
 
-    #- name: Checking document folder exists
-    #  ansible.builtin.stat:
-    #    path: '{{ (nextcloud_data_folder, "document") | path_join }}'
-    #  register: nextcloud_document_folder
-
-    #- name: Creating document folder
-    #  ansible.builtin.file:
-    #    path: '{{ (nextcloud_data_folder, "document") | path_join }}'
-    #    state: directory
-    #    mode: 0700
-    #    owner: 101000
-    #    group: 101000
-    #  when: not (nextcloud_document_folder | community.general.json_query('stat.exists'))
-
 - name: Ensuring Nextcloud network exists
   community.docker.docker_network:
     name: nextcloud
@@ -176,46 +162,3 @@
     labels:
       com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: nextcloud
-
-- name: Create Document Server container
-  community.docker.docker_container:
-    name: nextcloud-documentserver
-    image: onlyoffice/documentserver:latest
-    keep_volumes: false
-    restart_policy: unless-stopped
-    env:
-      JWT_ENABLED: 'true'
-      JWT_SECRET: '{{ nextcloud_docserver_secret }}'
-      JWT_HEADER: Authorization
-      JWT_IN_BODY: 'true'
-    networks:
-      - name: '{{ reverse_proxy_network }}'
-      - name: nextcloud
-        aliases:
-          - docs
-      - name: nextcloud-outside
-    mounts:
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-      #- type: bind
-      #  source: '{{ (nextcloud_data_folder, "document") | path_join }}'
-      #  target: /var/www/onlyoffice/Data
-      #- "$HOME/volumes/nextcloud/onlyoffice/fonts:/usr/share/fonts"
-      #- cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
-      #- files:/var/www/onlyoffice/documentserver-example/public/files
-    labels:
-      com.centurylinklabs.watchtower.depends-on: nextcloud
-      traefik.enable: 'true'
-      traefik.http.routers.onlyoffice.entryPoints: https
-      traefik.http.routers.onlyoffice.rule: Host(`office.magisystem.xyz`)
-      traefik.http.services.onlyoffice.loadbalancer.server.port: '80'
-
-#TODO: This won't work until Nextcloud has been through the first-time setup. It also might not be idempotent
-#- name: Enabling per-user key encryption 
-#  community.docker.docker_container_exec:
-#    container: nextcloud
-#    user: www-data
-#    chdir: /var/www/html
-#    command: php ./occ encryption:disable-master-key
