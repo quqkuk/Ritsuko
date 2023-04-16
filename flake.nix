@@ -5,7 +5,7 @@
 
 	outputs = { self, nixpkgs }: 
 		let
-		pkgs = nixpkgs.legacyPacakges.x86_64-linux;
+		pkgs = nixpkgs.legacyPackages.x86_64-linux;
 		in {
 			devShells.x86_64-linux.default = pkgs.mkShell {
 				name = "Ritsuko";
