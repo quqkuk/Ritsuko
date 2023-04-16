@@ -151,7 +151,6 @@
         source: '{{ (authentik_data_folder, "custom-templates") | path_join }}'
         target: /templates
     labels:
-      com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: authentik-redis,authentik-database
       traefik.enable: 'true'
       traefik.http.routers.authentik.entryPoints: https
@@ -186,7 +185,6 @@
         source: '{{ (authentik_data_folder, "certs") | path_join }}'
         target: /certs
     labels:
-      com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: authentik
 
 - name: Create Authentik LDAP Outpost container
@@ -212,6 +210,5 @@
         aliases:
           - ldap
     labels:
-      com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: authentik
   when: authentik_ldap_token is defined
