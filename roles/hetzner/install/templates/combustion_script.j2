@@ -31,26 +31,6 @@ partprobe "$DISK_PATH" && udevadm settle
 #TODO: Filter by disk before looking for the swap partition
 printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*/\1/') none swap defaults 0 0" >> /etc/fstab
 
-#-------- Docker
-# Uninstall podman
-zypper --non-interactive remove podman
-
-# Install docker and its python module
-zypper --non-interactive install docker
-python3 -m ensurepip
-python3 -m pip install docker
-
-# Change subuids and subgids
-sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
-
-# Forcing subuids/subgids
-sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1)){s/$/,/; a\\
-  \"userns-remap\": \"dockremap\"
-}" /etc/docker/daemon.json
-
-# Enabling docker
-systemctl enable docker.service
-
 #-------- User/Authentication
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
@@ -64,6 +44,10 @@ cat > "{{ ("/home/", hetzner_install_ansible_user, ".ssh", "authorized_keys") | 
 EOF
 chown -R --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SSH_FOLDER"
 
+#-------- firewall
+# TODO configure firewalld
+zypper --non-interactive install firewalld
+
 #-------- SELinux
 # Add port to selinux
 semanage port --add -t ssh_port_t -p tcp {{ hetzner_install_ansible_port }}
@@ -74,8 +58,8 @@ semodule -i ./snapperd_snapshot_var.pp
 
 #-------- Sudoers + SSHd + Logrotate
 
-cat > /etc/sudoers.d/90-permit-user-nopasswd <<-EOF
-	# Permit passwordless sudo to template_user
+cat > /etc/sudoers.d/90-allow-user-nopasswd <<-EOF
+	# Allow passwordless sudo to template_user
 	{{ hetzner_install_ansible_user }} ALL=(ALL:ALL) NOPASSWD: ALL
 EOF
 
@@ -184,3 +168,23 @@ cat > /etc/systemd/system/snapper-cleanup.timer.d/schedule.conf <<-EOF
 	[Timer]
 	OnUnitActiveSec=1h
 EOF
+
+#-------- Docker
+# Uninstall podman
+zypper --non-interactive remove podman
+
+# Install docker and its python module
+zypper --non-interactive install docker
+python3 -m ensurepip
+python3 -m pip install docker
+
+# Change subuids and subgids
+sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
+
+# Forcing subuids/subgids
+sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1)){s/$/,/; a\\
+  \"userns-remap\": \"dockremap\"
+}" /etc/docker/daemon.json
+
+# Enabling docker
+systemctl enable docker.service
