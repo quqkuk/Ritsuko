@@ -5,7 +5,7 @@
 set -ex
 
 # Download image and write it to disk
-curl -sL 'https://download.opensuse.org/distribution/leap-micro/5.3/appliances/openSUSE-Leap-Micro.x86_64-Default.raw.xz' | \
+curl -sL 'https://download.opensuse.org/distribution/leap-micro-current/appliances/openSUSE-Leap-Micro.x86_64-Default.raw.xz' | \
 	xz --decompress > "$1"
 
 # Move GPT trailer to end of disk
