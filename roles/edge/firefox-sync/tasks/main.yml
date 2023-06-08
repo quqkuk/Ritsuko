@@ -20,7 +20,7 @@
         mode: 0700
         owner: 101000
         group: 101000
-      when: not (firefox_database_folder | community.general.json_query('stat.exists'))
+      when: not (firefox_database_folder.stat.exists))
     
     - name: Checking application folder exists
       ansible.builtin.stat:
@@ -34,7 +34,7 @@
         mode: 0700
         owner: 101000
         group: 101000
-      when: not (firefox_state_folder | community.general.json_query('stat.exists'))
+      when: not (firefox_state_folder.stat.exists))
 
 - name: Ensuring Firefox Sync network exists
   community.docker.docker_network:
