@@ -22,6 +22,11 @@
         state: directory
         mode: 0555
 
+    - name: Checking traefik's acme file exists
+      ansible.builtin.stat:
+        path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
+      register: traefik_acme_file
+
     - name: Ensuring traefik acme file exists
       ansible.builtin.file:
         path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
@@ -29,6 +34,7 @@
         mode: 0600
         owner: 100000
         group: 100000
+      when: not (traefik_acme_file.stat.exists)
     
     - name: Template Traefik's Static Config
       ansible.builtin.template:
