@@ -20,7 +20,7 @@
         mode: 0700
         owner: 101000
         group: 101000
-      when: not (authentik_database_folder.stat.exists))
+      when: not (authentik_database_folder.stat.exists)
     
     - name: Ensuring worker media folder exists
       become: true
