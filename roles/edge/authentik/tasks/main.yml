@@ -155,9 +155,6 @@
       traefik.http.routers.authentik.entryPoints: https
       traefik.http.routers.authentik.rule: Host(`auth.magisystem.xyz`)
       traefik.http.services.authentik.loadbalancer.server.port: '9000'
-    #ports:
-    #  - 9000:9000
-    #  - 9443:9443
 
 - name: Create Authentik worker container
   community.docker.docker_container:

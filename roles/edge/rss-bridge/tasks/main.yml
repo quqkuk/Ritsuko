@@ -1,13 +1,23 @@
 ---
-- name: Creating RSS-Bridge config file
+- name: Configuring RSS-Bridge
   become: true
-  ansible.builtin.template:
-    src: rssbridge
-    dest: '{{ rssbridge_config_file }}'
-    mode: 0744
-    owner: 101000
-    group: 101000
-  register: rssbridge_config_template
+  block:
+    - name: Creating config folder
+      ansible.builtin.file:
+        path: '{{ rssbridge_config_folder }}'
+        state: directory
+        mode: 0744
+        owner: 101000
+        group: 101000
+
+    - name: Creating config file
+      ansible.builtin.copy:
+        src: rssbridge.php
+        dest: '{{ (rssbridge_config_folder | mandatory, "config.ini.php") | path_join }}'
+        mode: 0744
+        owner: 101000
+        group: 101000
+      register: rssbridge_config
 
 - name: Ensuring RSS-Bridge network exists
   community.docker.docker_network:
@@ -22,16 +32,24 @@
     image: rssbridge/rss-bridge
     keep_volumes: false
     restart_policy: unless-stopped
-    restart: '{{ rssbridge_config_template is changed }}'
+    restart: '{{ rssbridge_config is changed }}'
     networks:
       - name: rssbridge
+      - name: '{{ reverse_proxy_network }}'
     mounts:
       - type: bind
-        source: '{{ rssbridge_config_file }}'
+        source: '{{ rssbridge_config_folder }}'
         target: /config
         read_only: true
     labels:
       traefik.enable: 'true'
-      traefik.http.routers.onlyoffice.entryPoints: https
-      traefik.http.routers.onlyoffice.rule: Host(`rss.magisystem.xyz`)
-      traefik.http.services.onlyoffice.loadbalancer.server.port: '3000'
+      traefik.http.routers.rss-bridge.entryPoints: https
+      traefik.http.routers.rss-bridge.rule: Host(`rss.magisystem.xyz`)
+      traefik.http.routers.rss-bridge.service: rss-bridge
+      traefik.http.routers.rss-bridge-authentik.entryPoints: https
+      traefik.http.routers.rss-bridge-authentik.rule: Host(`rss.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
+      traefik.http.routers.rss-bridge-authentik.service: authentik
+      traefik.http.middlewares.rss-bridge-authentik.forwardauth.address: https://rss.magisystem.xyz/outpost.goauthentik.io/auth/traefik
+      traefik.http.middlewares.rss-bridge-authentik.forwardauth.trustForwardHeader: 'true'
+      traefik.http.routers.rss-bridge.middlewares: rss-bridge-authentik
+      traefik.http.services.rss-bridge.loadbalancer.server.port: '80'

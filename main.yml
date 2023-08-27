@@ -83,3 +83,6 @@
     - role: edge/firefox-sync
       tags:
         - firefox-sync
+    - role: edge/rss-bridge
+      tags:
+        - rss
