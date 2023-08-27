@@ -23,7 +23,6 @@
       when: not (authentik_database_folder.stat.exists)
     
     - name: Ensuring worker media folder exists
-      become: true
       ansible.builtin.file:
         path: '{{ (authentik_data_folder, "media") | path_join }}'
         state: directory

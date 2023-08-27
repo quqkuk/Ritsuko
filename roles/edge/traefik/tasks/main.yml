@@ -27,7 +27,7 @@
         path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
       register: traefik_acme_file
 
-    - name: Ensuring traefik acme file exists
+    - name: Creating traefik's acme.json file
       ansible.builtin.file:
         path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
         state: touch
