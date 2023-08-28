@@ -46,6 +46,9 @@
       traefik.http.routers.rss-bridge.entryPoints: https
       traefik.http.routers.rss-bridge.rule: Host(`rss.magisystem.xyz`)
       traefik.http.routers.rss-bridge.service: rss-bridge
+      traefik.http.routers.rss-bridge-feed.entryPoints: https
+      traefik.http.routers.rss-bridge-feed.rule: Host(`rss.magisystem.xyz`) && (PathPrefix(`/static`) || Query(`action=display`) || Query(`action=health`))
+      traefik.http.routers.rss-bridge-feed.service: rss-bridge
       traefik.http.routers.rss-bridge-authentik.entryPoints: https
       traefik.http.routers.rss-bridge-authentik.rule: Host(`rss.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
       traefik.http.routers.rss-bridge-authentik.service: authentik
