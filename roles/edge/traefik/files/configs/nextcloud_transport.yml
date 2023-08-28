@@ -1,0 +1,8 @@
+---
+http:
+  serversTransports:
+    nextcloud_transport:
+      forwardingTimeouts:
+        #dialTimeout: 10m
+        responseHeaderTimeout: 10m
+        idleConnTimeout: 10m

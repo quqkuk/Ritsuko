@@ -140,6 +140,7 @@
       traefik.http.middlewares.nextcloud-redirect.redirectregex.replacement: /remote.php/dav/
       traefik.http.middlewares.nextcloud-redirect.redirectregex.permanent: 'true'
       traefik.http.services.nextcloud.loadbalancer.server.port: '80'
+      traefik.http.services.nextcloud.loadbalancer.serversTransport: nextcloud_transport@file
 
 - name: Create Nextcloud cronjob container
   community.docker.docker_container:
