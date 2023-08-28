@@ -11,8 +11,8 @@
         group: 101000
 
     - name: Creating config file
-      ansible.builtin.copy:
-        src: rssbridge.php
+      ansible.builtin.template:
+        src: rssbridge.php.j2
         dest: '{{ (rssbridge_config_folder | mandatory, "config.ini.php") | path_join }}'
         mode: 0744
         owner: 101000

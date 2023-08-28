@@ -136,4 +136,4 @@ port = 11211
 ; provided, images can be included in generated feeds.
 ;
 ; "" = no token used (default)
-personal_access_token = ""
+personal_access_token = "{{ rss_bridge_discogs_token | default('') }}"
