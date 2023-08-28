@@ -3,5 +3,5 @@ http:
     dashboard:
       rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
       entryPoints:
-        - dashboard
+        - admin
       service: api@internal
