@@ -187,7 +187,6 @@
   community.docker.docker_container:
     name: authentik-ldap
     image: ghcr.io/goauthentik/ldap
-    command: server
     keep_volumes: false
     restart_policy: unless-stopped
     env:
