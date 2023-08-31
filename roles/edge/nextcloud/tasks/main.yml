@@ -151,6 +151,7 @@
     restart_policy: unless-stopped
     networks:
       - name: nextcloud
+      - name: nextcloud-outside
     mounts:
       - type: bind
         source: '{{ (nextcloud_data_folder, "app") | path_join }}'
