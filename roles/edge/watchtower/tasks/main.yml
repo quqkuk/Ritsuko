@@ -38,6 +38,7 @@
     keep_volumes: false
     restart_policy: unless-stopped
     env:
+      WATCHTOWER_SCHEDULE: 0 0 4 * * *
       WATCHTOWER_CLEANUP: 'true'
       WATCHTOWER_REMOVE_VOLUMES: 'true'
       DOCKER_HOST: tcp://socket-proxy:2375
