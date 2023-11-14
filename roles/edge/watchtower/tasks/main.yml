@@ -33,6 +33,7 @@
 - name: Create Watchtower container
   community.docker.docker_container:
     name: watchtower
+    hostname: Magisystem
     image: ghcr.io/containrrr/watchtower:latest
     keep_volumes: false
     restart_policy: unless-stopped
