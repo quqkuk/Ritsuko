@@ -1,0 +1,5 @@
+---
+hetzner_dns_api_token: '{{ undef(hint="API Token for Hetnzer''s DNS API") }}'
+hetzner_dns_record_prefix: '{{ undef(hint="Prefix for the DNS records") }}'
+hetzner_dns_record_ipv4: '{{ undef(hint="IPv4 Address for DNS A record") }}'
+hetzner_dns_record_ipv6: '{{ undef(hint="IPv6 Address for DNS AAAA record") }}'

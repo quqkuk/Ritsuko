@@ -1,0 +1,19 @@
+---
+- name: Create DNS Records
+  connection: local
+  delegate_to: localhost
+  # use when: inventory_hostname == ansible_play_hosts_all[-1] to run on the last host?
+  run_once: true
+  community.dns.hetzner_dns_record_sets:
+    hetzner_token: '{{ hetzner_dns_api_token }}'
+    zone_name: magisystem.xyz
+    record_sets:
+      - prefix: '{{ hetzner_dns_record_prefix }}'
+        type: CAA
+        value: 128 issue "letsencrypt.org"
+      - prefix: '{{ hetzner_dns_record_prefix }}'
+        type: A
+        value: '{{ hetzner_dns_record_ipv4 }}'
+      - prefix: '{{ hetzner_dns_record_prefix }}'
+        type: AAAA
+        value: '{{ hetzner_dns_record_ipv6 }}'

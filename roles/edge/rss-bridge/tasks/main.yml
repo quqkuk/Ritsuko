@@ -56,3 +56,11 @@
       traefik.http.middlewares.rss-bridge-authentik.forwardauth.trustForwardHeader: 'true'
       traefik.http.routers.rss-bridge.middlewares: rss-bridge-authentik
       traefik.http.services.rss-bridge.loadbalancer.server.port: '80'
+
+- name: Create DNS Records for rss.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: rss
+    hetzner_dns_record_ipv4: '{{ public_ipv4 }}'
+    hetzner_dns_record_ipv6: '{{ public_ipv6 }}'

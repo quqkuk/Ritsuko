@@ -158,3 +158,11 @@
         read_only: true
     labels:
       com.centurylinklabs.watchtower.depends-on: bitwarden
+
+- name: Create DNS Records for bwarden.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: bwarden
+    hetzner_dns_record_ipv4: '{{ public_ipv4 }}'
+    hetzner_dns_record_ipv6: '{{ public_ipv6 }}'

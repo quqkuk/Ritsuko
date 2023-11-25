@@ -7,9 +7,10 @@
   connection: local
   delegate_to: localhost
   block:
+    #TODO: Delete pubkey
     - name: Upload ssh pubkey
       hetzner.hcloud.hcloud_ssh_key:
-        api_token: '{{ hetzner_api_token }}'
+        api_token: '{{ hetzner_hcloud_api_token }}'
         name: 'ansible-{{ inventory_hostname }}'
         fingerprint: '{{ lookup("ansible.builtin.pipe", ''ssh-keygen -l -E md5 -f ''+ansible_ssh_private_key_file+''.pub | sed ''''s/.*MD5:\([a-zA-Z0-9:]*\).*/\1/'''''') }}'
         public_key: '{{ lookup("ansible.builtin.file", ansible_ssh_private_key_file+".pub") }}'
@@ -19,7 +20,7 @@
 
     - name: Put server in recovery mode
       hetzner.hcloud.hcloud_server:
-        api_token: '{{ hetzner_api_token }}'
+        api_token: '{{ hetzner_hcloud_api_token }}'
         name: '{{ inventory_hostname }}'
         rescue_mode: linux64
         ssh_keys:
@@ -161,6 +162,6 @@
   connection: local
   delegate_to: localhost
   hetzner.hcloud.hcloud_server:
-    api_token: '{{ hetzner_api_token }}'
+    api_token: '{{ hetzner_hcloud_api_token }}'
     name: '{{ inventory_hostname }}'
     backups: true

@@ -3,6 +3,7 @@ collections:
   - hetzner.hcloud
   - community.general
   - community.docker
+  - community.dns
   - ansible.posix
   - ansible.utils
 
