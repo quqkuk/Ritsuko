@@ -86,3 +86,15 @@
     - role: edge/rss-bridge
       tags:
         - rss
+
+- name: Configuring DNS for Migadu
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Creating DNS Records
+      ansible.builtin.include_role:
+        name: hetzner/dns
+        tasks_from: migadu-mail
+        defaults_from: migadu-mail
+  tags:
+    - mail

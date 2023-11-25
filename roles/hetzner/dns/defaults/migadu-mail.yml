@@ -1,0 +1,3 @@
+---
+hetzner_dns_api_token: '{{ undef(hint="API Token for Hetnzer''s DNS API") }}'
+migadu_verification_code: '{{ undef(hint="Migadu''s Verification Code") }}'

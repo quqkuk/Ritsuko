@@ -7,6 +7,7 @@ compose:
 group: hetzner
 groups:
   edge: true
+  dns: true
 token: !vault |
           $ANSIBLE_VAULT;1.2;AES256;vault
           33633066326166336430303866313064336438326337343536646132333435653561313066326636

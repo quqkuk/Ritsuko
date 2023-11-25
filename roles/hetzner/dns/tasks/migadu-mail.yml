@@ -1,0 +1,56 @@
+---
+- name: Create DNS Records for Migadu
+  connection: local
+  delegate_to: localhost
+  run_once: true
+  module_defaults:
+    group/community.dns.hetzner:
+      hetzner_token: '{{ hetzner_dns_api_token }}'
+      zone_name: magisystem.xyz
+  block:
+    - name: Create Verification, SPF, DMARC TXT and Autoconfig Records
+      community.dns.hetzner_dns_record_sets:
+        record_sets:
+          - prefix: '@'
+            type: TXT
+            value:
+              - 'hosted-email-verify={{ migadu_verification_code }}'
+              - v=spf1 include:spf.migadu.com -all
+          - prefix: _dmarc
+            type: TXT
+            value: v=DMARC1; p=quarantine;
+
+          - prefix: autoconfig
+            type: CNAME
+            value: autoconfig.migadu.com.
+
+          - prefix: _autodiscover._tcp
+            type: SRV
+            value: 0 1 443 autodiscover.migadu.com.
+
+          - prefix: _submissions._tcp
+            type: SRV
+            value: 0 1 465 smtp.migadu.com.
+          - prefix: _imaps._tcp
+            type: SRV
+            value: 0 1 993 imap.migadu.com.
+          - prefix: _pop3s._tcp
+            type: SRV
+            value: 0 1 995 pop.migadu.com.
+
+    - name: Create MX Records
+      community.dns.hetzner_dns_record_set:
+        state: present
+        prefix: '{{ item }}'
+        type: MX
+        value:
+          - 10 aspmx1.migadu.com
+          - 20 aspmx2.migadu.com
+      with_ansible.builtin.list: ["@", "*"]
+    - name: Create DKIM and ARC Key Records
+      community.dns.hetzner_dns_record_set:
+        state: present
+        prefix: 'key{{ item }}._domainkey'
+        type: CNAME
+        value: 'key{{ item }}.magisystem.xyz._domainkey.migadu.com.'
+      with_ansible.builtin.list: '{{ range(1, 3+1) | list }}'
