@@ -1,2 +1,2 @@
 [dns]
-localhost
+localhost ansible_connection=ansible.builtin.local
