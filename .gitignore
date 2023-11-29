@@ -2,3 +2,4 @@
 /ssh_keys/*
 !/ssh_keys/.gitkeep
 /roles/hetzner/install/files/snapperd_snapshot_var.pp
+/.cache

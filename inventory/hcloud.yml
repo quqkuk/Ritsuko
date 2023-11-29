@@ -8,6 +8,9 @@ group: hetzner
 groups:
   edge: true
   dns: true
+cache: true
+cache_plugin: community.general.pickle
+cache_prefix: hcloud
 token: !vault |
           $ANSIBLE_VAULT;1.2;AES256;vault
           33633066326166336430303866313064336438326337343536646132333435653561313066326636
