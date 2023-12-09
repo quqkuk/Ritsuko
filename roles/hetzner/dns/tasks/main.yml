@@ -1,5 +1,5 @@
 ---
-- name: Create DNS Records
+- name: 'Create DNS Records for {{ hetzner_dns_record_prefix }}.magisystem.xyz'
   connection: local
   delegate_to: localhost
   run_once: true
