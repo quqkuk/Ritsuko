@@ -14,6 +14,7 @@
       - prefix: '{{ hetzner_dns_record_prefix }}'
         type: A
         value: '{{ hetzner_dns_record_ipv4 }}'
-      - prefix: '{{ hetzner_dns_record_prefix }}'
-        type: AAAA
-        value: '{{ hetzner_dns_record_ipv6 }}'
+      #TODO: Enable Docker's IPv6 support
+      #- prefix: '{{ hetzner_dns_record_prefix }}'
+      #  type: AAAA
+      #  value: '{{ hetzner_dns_record_ipv6 }}'
