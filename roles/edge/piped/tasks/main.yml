@@ -1,0 +1,165 @@
+---
+- name: Creating Piped volume folders
+  become: true
+  block:
+    - name: Ensuring data folder exists
+      ansible.builtin.file:
+        path: '{{ piped_data_folder }}'
+        state: directory
+        mode: 0755
+
+    - name: Checking database folder exists
+      ansible.builtin.stat:
+        path: '{{ (piped_data_folder, "data") | path_join }}'
+      register: piped_database_folder
+
+    - name: Creating database folder
+      ansible.builtin.file:
+        path: '{{ (piped_data_folder, "data") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: 101000
+        group: 101000
+      when: not (piped_database_folder.stat.exists)
+
+    - name: Creating config file
+      ansible.builtin.template:
+        src: backend.properties.j2
+        dest: '{{ piped_backend_config_file }}'
+        mode: 0744
+        owner: 101000
+        group: 101000
+      register: piped_backend_config_template
+
+- name: Ensuring Piped-outside network exists
+  community.docker.docker_network:
+    name: piped-outside
+    driver: bridge
+    internal: false
+    state: present
+
+- name: Create Piped Proxy container
+  community.docker.docker_container:
+    name: piped-proxy
+    image: 1337kavin/piped-proxy
+    restart_policy: unless-stopped
+    keep_volumes: false
+    networks:
+      - name: piped-outside
+      - name: '{{ reverse_proxy_network }}'
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.piped-proxy-not-cache.entryPoints: https
+      traefik.http.routers.piped-proxy-not-cache.rule: Host(`pipedproxy.magisystem.xyz`) && (PathPrefix(`/videoplayback`) || PathPrefix(`/api/v4`) || PathPrefix(`/api/manifest`))
+      traefik.http.routers.piped-proxy-not-cache.middlewares: piped-headers,piped-proxy-no-cache-headers
+      traefik.http.routers.piped-proxy-not-cache.service: piped-proxy
+      traefik.http.routers.piped-proxy-cached.entryPoints: https
+      traefik.http.routers.piped-proxy-cached.rule: Host(`pipedproxy.magisystem.xyz`)
+      traefik.http.routers.piped-proxy-cached.middlewares: piped-headers,piped-proxy-cache-headers
+      traefik.http.routers.piped-proxy-cached.service: piped-proxy
+      traefik.http.middlewares.piped-headers.headers.stsSeconds: '31536000'
+      traefik.http.middlewares.piped-headers.headers.permissionsPolicy: interest-cohort=()
+      traefik.http.middlewares.piped-headers.headers.referrerPolicy: no-referrer
+      traefik.http.middlewares.piped-headers.headers.customresponseheaders.X-Robots-Tag: noindex
+      traefik.http.middlewares.piped-proxy-cache-headers.headers.customresponseheaders.Cache-Control: public, max-age=604800
+      traefik.http.middlewares.piped-proxy-no-cache-headers.headers.customresponseheaders.Cache-Control: private, always
+      traefik.http.services.piped-proxy.loadbalancer.server.port: '8080'
+
+- name: Ensuring piped network exists
+  community.docker.docker_network:
+    name: piped
+    driver: bridge
+    internal: true
+    state: present
+
+- name: Create PostgreSQL container
+  community.docker.docker_container:
+    name: piped-database
+    image: postgres:15-alpine
+    restart_policy: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    keep_volumes: false
+    env:
+      POSTGRES_PASSWORD: '{{ piped_database_pass }}'
+      POSTGRES_USER: piped
+      POSTGRES_DB: piped
+    mounts:
+      - type: bind
+        source: '{{ (piped_data_folder, "data") | path_join }}'
+        target: /var/lib/postgresql/data
+    networks:
+      - name: piped
+        aliases:
+          - database
+
+- name: Create Piped Backend container
+  community.docker.docker_container:
+    name: piped
+    image: 1337kavin/piped
+    restart: '{{ piped_backend_config_template is changed }}'
+    restart_policy: unless-stopped
+    keep_volumes: false
+    mounts:
+      - type: bind
+        source: '{{ piped_backend_config_file }}'
+        target: /app/config.properties
+        read_only: true
+    networks:
+      - name: piped
+      - name: piped-outside
+      - name: '{{ reverse_proxy_network }}'
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.piped-backend.entryPoints: https
+      traefik.http.routers.piped-backend.rule: Host(`pipedapi.magisystem.xyz`)
+      traefik.http.routers.piped-backend.middlewares: piped-headers
+      traefik.http.services.piped-backend.loadbalancer.server.port: '8080'
+
+- name: Create Piped Frontend container
+  community.docker.docker_container:
+    name: piped-frontend
+    image: 1337kavin/piped-frontend
+    entrypoint:
+      - ash
+      - -c
+      - sed -i s/pipedapi.kavin.rocks/pipedapi.magisystem.xyz/g /usr/share/nginx/html/assets/* && /docker-entrypoint.sh && nginx -g "daemon off;"
+    restart_policy: unless-stopped
+    keep_volumes: false
+    networks:
+      - name: piped-outside
+      - name: '{{ reverse_proxy_network }}'
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.piped-frontend.entryPoints: https
+      traefik.http.routers.piped-frontend.rule: Host(`piped.magisystem.xyz`)
+      traefik.http.routers.piped-frontend.middlewares: piped-headers
+      traefik.http.services.piped-frontend.loadbalancer.server.port: '80'
+
+- name: Create DNS Records for pipedproxy.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: pipedproxy
+    hetzner_dns_record_ipv4: '{{ public_ipv4 }}'
+    hetzner_dns_record_ipv6: '{{ public_ipv6 }}'
+
+- name: Create DNS Records for pipedapi.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: pipedapi
+    hetzner_dns_record_ipv4: '{{ public_ipv4 }}'
+    hetzner_dns_record_ipv6: '{{ public_ipv6 }}'
+
+- name: Create DNS Records for piped.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: piped
+    hetzner_dns_record_ipv4: '{{ public_ipv4 }}'
+    hetzner_dns_record_ipv6: '{{ public_ipv6 }}'

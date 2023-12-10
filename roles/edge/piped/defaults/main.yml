@@ -1,0 +1,5 @@
+---
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+piped_backend_config_file: '{{ (container_config_folder | mandatory, "piped-backend.properties") | path_join }}'
+piped_data_folder: '{{ (container_volumes_folder | mandatory, "piped") | path_join }}'
+piped_database_pass: '{{ undef(hint="Password for piped''s PostgreSQL instance") }}'

@@ -86,6 +86,9 @@
     - role: edge/rss-bridge
       tags:
         - rss
+    - role: edge/piped
+      tags:
+        - piped
 
 - name: Configuring DNS for Migadu
   hosts: localhost
