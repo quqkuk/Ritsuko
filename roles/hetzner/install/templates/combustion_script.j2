@@ -11,9 +11,6 @@ ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
 #-------- Partitions
 
 # Removing Config partition, Growing SWAP until end of the disk, Growing data partition to fill the empty space
-#TODO: Find a way to resize online partitions or unmount /dev/sda{2,3,4}, resize partitions and then remount,
-#might be hard due to the fact that the script is executed in a specific environment
-#mount
 DISK_PATH='{{ ('/dev/', hetzner_install_installation_drive) | path_join }}'
 PARTED_OUTPUT=$(parted -s "$DISK_PATH" unit MiB print)
 CONFIG_PART_NUMBER=$(printf "$PARTED_OUTPUT" | tail -n 1 | cut -d ' ' -f2)
