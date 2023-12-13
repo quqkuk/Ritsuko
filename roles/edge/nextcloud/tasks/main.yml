@@ -155,6 +155,7 @@
         target: /etc/localtime
         read_only: true
     labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: nextcloud-redis,nextcloud-database
       traefik.enable: 'true'
       traefik.http.routers.nextcloud.entryPoints: https
@@ -186,6 +187,7 @@
         target: /etc/localtime
         read_only: true
     labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: nextcloud
 
 - name: Create DNS Records for cloud.magisystem.xyz
