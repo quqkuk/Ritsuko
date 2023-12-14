@@ -190,6 +190,32 @@
       com.centurylinklabs.watchtower.monitor-only: 'true'
       com.centurylinklabs.watchtower.depends-on: nextcloud
 
+- name: Create UnifiedPush proxy container
+  community.docker.docker_container:
+    name: nextcloud-up-proxy
+    image: common-proxies
+    keep_volumes: false
+    restart_policy: unless-stopped
+    env:
+      UP_GATEWAY_MATRIX_ENABLE: 'false'
+      UP_GATEWAY_TRANSPARENT_DRAFT4_ENABLE: 'true'
+      UP_GATEWAY_TRANSPARENT_DRAFT4_ADDRESS: cloud
+      UP_GATEWAY_TRANSPARENT_DRAFT4_SCHEME: http
+      UP_GATEWAY_TRANSPARENT_DRAFT4_PATH: /index.php/apps/uppush/push/
+      UP_GATEWAY_ALLOWEDHOSTS: cloud
+    networks:
+      - name: nextcloud
+      - name: '{{ reverse_proxy_network }}'
+    labels:
+      com.centurylinklabs.watchtower.depends-on: nextcloud
+      traefik.enable: 'true'
+      traefik.http.routers.up-proxy.entryPoints: https
+      traefik.http.routers.up-proxy.rule: Host(`cloud.magisystem.xyz`) && Method(`POST`) && PathPrefix(`/{first:/?}index.php/apps/uppush/{second:/?}push/`)
+      traefik.http.routers.up-proxy.middlewares: up-proxy-path-normaliser
+      traefik.http.middlewares.up-proxy-path-normaliser.ReplacePathRegex.regex: '^//?index\.php/apps/uppush//?push/(.*)'
+      traefik.http.middlewares.up-proxy-path-normaliser.ReplacePathRegex.replacement: '/index.php/apps/uppush/push/$1'
+      traefik.http.services.up-proxy.loadbalancer.server.port: '5000'
+
 - name: Create DNS Records for cloud.magisystem.xyz
   ansible.builtin.import_role:
     name: hetzner/dns
