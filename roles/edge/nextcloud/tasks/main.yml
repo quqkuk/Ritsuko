@@ -207,6 +207,7 @@
       - name: nextcloud
       - name: '{{ reverse_proxy_network }}'
     labels:
+      com.centurylinklabs.watchtower.enable: 'false'
       com.centurylinklabs.watchtower.depends-on: nextcloud
       traefik.enable: 'true'
       traefik.http.routers.up-proxy.entryPoints: https
