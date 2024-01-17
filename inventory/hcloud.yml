@@ -6,7 +6,6 @@ compose:
   public_ipv6: ipv6
 group: hetzner
 groups:
-  edge: true
   dns: true
 cache: true
 cache_plugin: community.general.pickle

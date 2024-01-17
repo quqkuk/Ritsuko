@@ -40,7 +40,7 @@
         msg: Rebooting to new snapshot
 
 - name: Managing containers on the Magisystem
-  hosts: edge
+  hosts: magisystem
   vars:
     container_volumes_folder: /var/container-volumes
     container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
