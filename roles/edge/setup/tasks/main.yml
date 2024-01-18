@@ -5,6 +5,12 @@
     state: directory
     mode: 0755
 
+- name: Ensuring volumes folder exists
+  ansible.builtin.stat:
+    path: '{{ container_volumes_folder }}'
+  register: edge_setup_volumes
+  failed_when: not edge_setup_volumes.stat.exists
+
 - name: Create services network
   community.docker.docker_network:
     name: '{{ reverse_proxy_network }}'
