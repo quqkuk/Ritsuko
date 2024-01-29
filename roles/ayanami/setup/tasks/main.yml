@@ -24,3 +24,17 @@
             auto_import_keys: false
             repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
         - *install_zfs_packages
+
+    - name: Make Docker remap users by default
+      ansible.builtin.lineinfile:
+        path: /etc/sysconfig/docker
+        backrefs: true
+        regexp: '^DOCKER_OPTS="(?!.*--userns-remap)(.*)"'
+        line: 'DOCKER_OPTS="\1 --userns-remap default"'
+      register: ayanami_setup_sysconfig_docker
+
+    - name: Start and enable docker
+      ansible.builtin.systemd_service:
+        name: docker.service
+        enabled: true
+        state: '{% if ayanami_setup_sysconfig_docker is changed %}restarted{% else %}started{% endif %}'
