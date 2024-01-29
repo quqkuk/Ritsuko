@@ -176,11 +176,7 @@ python3 -m ensurepip
 python3 -m pip install docker
 
 # Forcing subuids/subgids
-sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1))"'{
-  s/$/,/
-  a\
-	"userns-remap": "dockremap"
-}' /etc/docker/daemon.json
+sed -i '/^DOCKER_OPTS/s/"\(.*\)"/"\1 --userns-remap default"/' /etc/sysconfig/docker
 
 # Enabling docker
 systemctl enable docker.service
