@@ -1,26 +1,26 @@
-- name: Installing packages
-  become: true
-  community.general.zypper:
-    name:
-      - hdparm
-      - smartmontools
-      - ddclient
-      - docker
-
-- name: Install zfs
-  become: true
+- become: true
   block:
-    - &install_zfs_packages
-      name: Install zfs packages
+    - name: Installing packages
       community.general.zypper:
         name:
-          - zfs
-          - zfs-kmp-default
-          - zfs-ueficert
-  rescue:
-    # TODO: Do this only if there is no package that provides zfs
-    - name: Add filesystems repo from Open Build Service
-      community.general.zypper_repository:
-        auto_import_keys: false
-        repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
-    - *install_zfs_packages
+          - hdparm
+          - smartmontools
+          - ddclient
+          - docker
+
+    - name: Install zfs
+      block:
+        - &install_zfs_packages
+          name: Install zfs packages
+          community.general.zypper:
+            name:
+              - zfs
+              - zfs-kmp-default
+              - zfs-ueficert
+      rescue:
+        # TODO: Do this only if there is no package that provides zfs
+        - name: Add filesystems repo from Open Build Service
+          community.general.zypper_repository:
+            auto_import_keys: false
+            repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
+        - *install_zfs_packages
