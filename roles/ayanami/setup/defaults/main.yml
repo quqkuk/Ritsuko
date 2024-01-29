@@ -1,0 +1,2 @@
+---
+zed_up_endpoint: '{{ undef(hint="UnifiedPush endpoint for ZED to send notifications to") }}'

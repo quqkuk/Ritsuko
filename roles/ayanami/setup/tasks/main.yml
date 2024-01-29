@@ -25,6 +25,24 @@
             repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
         - *install_zfs_packages
 
+    - name: Set ZED Email Address to UnifiedPush endpoint
+      ansible.builtin.lineinfile:
+        path: /etc/zfs/zed.d/zed.rc
+        search_string: 'ZED_EMAIL_ADDR="'
+        line: 'ZED_EMAIL_ADDR="{{ zed_up_endpoint }}"'
+
+    - name: Point ZED to curl to send "emails"
+      ansible.builtin.lineinfile:
+        path: /etc/zfs/zed.d/zed.rc
+        search_string: 'ZED_EMAIL_PROG="'
+        line: 'ZED_EMAIL_PROG="curl"'
+
+    - name: Set options to send ZED notifications with curl
+      ansible.builtin.lineinfile:
+        path: /etc/zfs/zed.d/zed.rc
+        search_string: 'ZED_EMAIL_OPTS="'
+        line: 'ZED_EMAIL_OPTS="-X POST --data @- ''@ADDRESS@''"'
+
     - name: Make Docker remap users by default
       ansible.builtin.lineinfile:
         path: /etc/sysconfig/docker
