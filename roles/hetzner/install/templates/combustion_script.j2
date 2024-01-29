@@ -175,9 +175,6 @@ zypper --non-interactive install docker
 python3 -m ensurepip
 python3 -m pip install docker
 
-# Change subuids and subgids
-sudo usermod --add-subuids 100000-165535 --del-subuids 100000000-200000000 --add-subgids 100000-165535 --del-subgids 100000000-200000000 dockremap
-
 # Forcing subuids/subgids
 sed -i "$(($(wc -l /etc/docker/daemon.json | cut --delimiter=" " -f1)-1))"'{
   s/$/,/
