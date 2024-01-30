@@ -73,7 +73,7 @@
       ansible.builtin.lineinfile:
         path: /etc/sysconfig/docker
         backrefs: true
-        regexp: '^DOCKER_OPTS="(?!.*--userns-remap)(.*)"'
+        regexp: '^DOCKER_OPTS="(?!.*--userns-remap default)(.*)"'
         line: 'DOCKER_OPTS="\1 --userns-remap default"'
       register: ayanami_setup_sysconfig_docker
 
