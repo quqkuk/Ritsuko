@@ -77,3 +77,20 @@
         name: docker.service
         enabled: true
         state: '{% if ayanami_setup_sysconfig_docker is changed %}restarted{% else %}started{% endif %}'
+
+    - name: Configure ddclient
+      ansible.builtin.blockinfile:
+        path: /etc/ddclient.conf
+        block: |
+          use=web
+          protocol=hetzner
+          password={{ ddclient_hetzner_token }}
+          zone=magisystem.xyz
+          music.magisystem.xyz
+      register: ayanami_setup_ddclient
+
+    - name: Start and enable ddclient
+      ansible.builtin.systemd_service:
+        name: ddclient.service
+        enabled: true
+        state: '{% if ayanami_setup_ddclient is changed %}restarted{% else %}started{% endif %}'
