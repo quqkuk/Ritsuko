@@ -1,29 +1,20 @@
 - become: true
   block:
-    - name: Installing packages
+    - name: Add filesystems repo from Open Build Service
+      community.general.zypper_repository:
+        auto_import_keys: false
+        repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
+
+    - name: Install packages
       community.general.zypper:
         name:
           - hdparm
           - smartmontools
-          - ddclient
           - docker
-
-    - name: Install zfs
-      block:
-        - &install_zfs_packages
-          name: Install zfs packages
-          community.general.zypper:
-            name:
-              - zfs
-              - zfs-kmp-default
-              - zfs-ueficert
-      rescue:
-        # TODO: Do this only if there is no package that provides zfs
-        - name: Add filesystems repo from Open Build Service
-          community.general.zypper_repository:
-            auto_import_keys: false
-            repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
-        - *install_zfs_packages
+          - zfs
+          - zfs-kmp-default
+          - zfs-ueficert
+          - ddclient
 
     - name: Set ZED Email Address to UnifiedPush endpoint
       ansible.builtin.lineinfile:
