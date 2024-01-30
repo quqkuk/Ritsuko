@@ -5,6 +5,11 @@
         auto_import_keys: false
         repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
 
+    - name: Add network repo from Open Build Service
+      community.general.zypper_repository:
+        auto_import_keys: false
+        repo: 'https://download.opensuse.org/repositories/network/{{ ansible_facts.lsb.release }}/network.repo'
+
     - name: Install packages
       community.general.zypper:
         name:
