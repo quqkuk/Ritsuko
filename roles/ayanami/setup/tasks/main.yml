@@ -43,6 +43,32 @@
         search_string: 'ZED_EMAIL_OPTS="'
         line: 'ZED_EMAIL_OPTS="-X POST --data @- ''@ADDRESS@''"'
 
+    - name: Send smartd notification script
+      ansible.builtin.copy:
+        content: !unsafe |
+          #!/bin/bash
+          curl -X POST --data @- "$SMARTD_ADDRESS"
+        dest: /usr/local/bin/send_smartd_to_up.sh
+        owner: root
+        group: root
+        mode: 0755
+      register: ayanami_setup_smartd
+
+    - name: Send SMART notifications through UnifiedPush
+      ansible.builtin.lineinfile:
+        path: /etc/smartd.conf
+        backrefs: true
+        #TODO: Improve regex to capture all but -m and -M exec
+        regexp: '^#?DEFAULT (?!.*-m {{ smartd_up_endpoint }} -M exec /usr/local/bin/send_smartd_to_up\.sh)(.*)$'
+        line: 'DEFAULT \1 -m {{ smartd_up_endpoint }} -M exec /usr/local/bin/send_smartd_to_up.sh -M diminishing'
+      register: ayanami_setup_smartd
+
+    - name: Start and enable smartd
+      ansible.builtin.systemd_service:
+        name: smartd.service
+        enabled: true
+        state: '{% if ayanami_setup_smartd is changed %}reloaded{% else %}started{% endif %}'
+
     - name: Make Docker remap users by default
       ansible.builtin.lineinfile:
         path: /etc/sysconfig/docker
