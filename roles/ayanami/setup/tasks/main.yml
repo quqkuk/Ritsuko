@@ -94,3 +94,17 @@
         name: ddclient.service
         enabled: true
         state: '{% if ayanami_setup_ddclient is changed %}restarted{% else %}started{% endif %}'
+
+    - name: Allow HTTPS through the firewall
+      ansible.posix.firewalld:
+        service: https
+        state: enabled
+        permanent: true
+        immediate: true
+
+    #- name: Allow HTTP through the firewall for ACME
+    #  ansible.posix.firewalld:
+    #    service: http
+    #    state: enabled
+    #    permanent: true
+    #    immediate: true
