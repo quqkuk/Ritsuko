@@ -97,6 +97,7 @@
     container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
   roles:
     - role: ayanami/setup
+    - role: ayanami/zfs
     #- role: edge/setup
     #- role: edge/watchtower
     #  tags:
