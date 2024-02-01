@@ -1,2 +1,0 @@
----
-zfs_pool_name: '{{ ansible_facts.hostname }}'

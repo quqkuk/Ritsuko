@@ -95,18 +95,25 @@
   vars:
     container_volumes_folder: /var/container-volumes
     container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
+    storage_pool_folder: /var/storage-pool
   roles:
     - role: ayanami/setup
-    - role: ayanami/zfs
-    #- role: edge/setup
-    #- role: edge/watchtower
-    #  tags:
-    #    - watchtower
-    #    - updates
-    #- role: edge/traefik
-    #  tags:
-    #    - reverse-proxy
-    #    - traefik
+    #- role: ayanami/samba
+    - role: edge/setup
+    - role: edge/watchtower
+      tags:
+        - watchtower
+        - updates
+    - role: edge/traefik
+      tags:
+        - reverse-proxy
+        - traefik
+    - role: ayanami/fix-docker-internal-firewalld
+      tags:
+        - reverse-proxy
+        - traefik
+        - watchtower
+        - updates
 
 - name: Configuring DNS for Migadu
   hosts: localhost
