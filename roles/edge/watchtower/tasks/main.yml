@@ -3,6 +3,13 @@
   community.docker.docker_network:
     name: watchtower
     driver: bridge
+    internal: true
+    state: present
+
+- name: Ensuring Watchtower-outside bridge network exists
+  community.docker.docker_network:
+    name: watchtower-outside
+    driver: bridge
     internal: false
     state: present
 
@@ -33,7 +40,7 @@
 - name: Create Watchtower container
   community.docker.docker_container:
     name: watchtower
-    hostname: Magisystem
+    hostname: '{{ inventory_hostname }}'
     image: ghcr.io/containrrr/watchtower:latest
     keep_volumes: false
     restart_policy: unless-stopped
@@ -46,6 +53,7 @@
       WATCHTOWER_NOTIFICATION_URL: 'telegram://{{ watchtower_telegram_bot_token }}@telegram?chats={{ watchtower_telegram_chat_ids }}'
     networks:
       - name: watchtower
+      - name: watchtower-outside
     mounts:
       - type: bind
         source: /etc/localtime
