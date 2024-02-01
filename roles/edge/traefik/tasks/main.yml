@@ -98,12 +98,8 @@
     restart: '{{ traefik_static_config is changed }}'
     mounts:
       - type: bind
-        source: '{{ (traefik_config_folder, "traefik.yml") | path_join }}'
-        target: /etc/traefik/traefik.yml
-        read_only: true
-      - type: bind
-        source: '{{ (traefik_config_folder, "configs") | path_join }}'
-        target: /etc/traefik/configs
+        source: '{{ traefik_config_folder }}'
+        target: /etc/traefik
         read_only: true
       - type: bind
         source: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
