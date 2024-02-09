@@ -1,5 +1,0 @@
----
-reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
-firefox_data_folder: '{{ (container_volumes_folder | mandatory, "firefox") | path_join }}'
-firefox_database_password: '{{ undef(hint="Firefox Sync Database''s password") }}'
-firefox_secret: '{{ undef(hint="Firefox Sync''s secret") }}'
