@@ -1,0 +1,123 @@
+---
+version: "3.4"
+
+services:
+  postgresql:
+    image: docker.io/library/postgres:12-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    networks:
+      - default
+    volumes:
+      - '{{ (authentik_data_folder, "data") | path_join }}:/var/lib/postgresql/data'
+    environment:
+      POSTGRES_PASSWORD: '{{ authentik_database_pass }}'
+      POSTGRES_USER: authentik
+      POSTGRES_DB: authentik
+
+  redis:
+    image: docker.io/library/redis:alpine
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    networks:
+      - default
+
+  server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}
+    restart: unless-stopped
+    command: server
+    networks:
+      - default
+      - outside
+      - reverse-proxy-network
+    environment: &authentik-env
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: '{{ authentik_database_pass }}'
+      AUTHENTIK_SECRET_KEY: '{{ authentik_secret_key }}'
+      AUTHENTIK_EMAIL__HOST: '{{ mail_server["host"] }}'
+      AUTHENTIK_EMAIL__PORT: '{{ mail_server["port"] }}'
+      AUTHENTIK_EMAIL__USERNAME: '{{ mail_server["username"] }}'
+      AUTHENTIK_EMAIL__PASSWORD: '{{ mail_server["password"] }}'
+      AUTHENTIK_EMAIL__USE_TLS: '{{ mail_server["use_tls"] }}'
+      AUTHENTIK_EMAIL__USE_SSL: '{{ mail_server["use_ssl"] }}'
+      AUTHENTIK_EMAIL__TIMEOUT: '{{ mail_server["timeout"] }}'
+      AUTHENTIK_EMAIL__FROM: '{{ authentik_mail_from | default("") }}'
+      AUTHENTIK_ERROR_REPORTING__ENABLED: 'false'
+      AUTHENTIK_AVATARS: 'attributes.avatar'
+    volumes:
+      - '{{ (authentik_data_folder, "media") | path_join }}:/media'
+      - '{{ (authentik_data_folder, "custom-templates") | path_join }}:/templates'
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.authentik.entryPoints: https
+      traefik.http.routers.authentik.rule: Host(`auth.magisystem.xyz`)
+      traefik.http.services.authentik.loadbalancer.server.port: '9000'
+    depends_on:
+      - postgresql
+      - redis
+
+  worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}
+    restart: unless-stopped
+    command: worker
+    environment: *authentik-env
+    ## `user: root` and the docker socket volume are optional.
+    ## See more for the docker socket integration here:
+    ## https://goauthentik.io/docs/outposts/integrations/docker
+    ## Removing `user: root` also prevents the worker from fixing the permissions
+    ## on the mounted folders, so when removing this make sure the folders have the correct UID/GID
+    ## (1000:1000 by default)
+    #user: root
+    volumes:
+      - '{{ (authentik_data_folder, "media") | path_join }}:/media'
+      - '{{ (authentik_data_folder, "custom-templates") | path_join }}:/templates'
+      - '{{ (authentik_data_folder, "certs") | path_join }}:/certs'
+    depends_on:
+      - postgresql
+      - redis
+
+  {% if authentik_ldap_token is defined -%}
+  ldap:
+    image: ghcr.io/goauthentik/ldap
+    restart: unless-stopped
+    environment:
+      AUTHENTIK_PORT_LDAP: '389'
+      AUTHENTIK_PORT_LDAPS: '636'
+      AUTHENTIK_HOST: https://authentik:9443
+      AUTHENTIK_INSECURE: 'false'
+      #AUTHENTIK_HOST: http://authentik:9000
+      #AUTHENTIK_INSECURE: 'true'
+      AUTHENTIK_TOKEN: '{{ authentik_ldap_token }}'
+    networks:
+      - default
+      - ldap
+    depends_on:
+      - server
+  {%- endif %}
+
+networks:
+  default:
+    internal: true
+  {% if authentik_ldap_token is defined -%}
+  ldap:
+    internal: true
+  {% endif -%}
+  outside:
+    internal: false
+  reverse-proxy-network:
+    name: '{{ reverse_proxy_network }}'
+    external: true

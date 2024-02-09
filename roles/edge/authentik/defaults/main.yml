@@ -1,5 +1,6 @@
 ---
 reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+authentik_config_folder: '{{ (container_config_folder | mandatory, "authentik") | path_join }}'
 authentik_data_folder: '{{ (container_volumes_folder | mandatory, "authentik") | path_join }}'
 authentik_secret_key: '{{ undef(hint="Secret key for authentik") }}'
 authentik_database_pass: '{{ undef(hint="Password for authentik''s PostgreSQL instance") }}'
