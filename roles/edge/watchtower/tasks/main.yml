@@ -1,63 +1,16 @@
 ---
-- name: Ensuring Watchtower bridge network exists
-  community.docker.docker_network:
-    name: watchtower
-    driver: bridge
-    internal: true
-    state: present
+- name: Ensuring Watchtower config folder exists
+  ansible.builtin.file:
+    path: '{{ watchtower_config_folder }}'
+    state: directory
+    mode: 0755
 
-- name: Ensuring Watchtower-outside bridge network exists
-  community.docker.docker_network:
-    name: watchtower-outside
-    driver: bridge
-    internal: false
-    state: present
+- name: Template Watchtower's Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: '{{ (watchtower_config_folder, "compose.yaml") | path_join }}'
+    mode: 0444
 
-- name: Create socket proxy container
-  community.docker.docker_container:
-    name: watchtower-socket-proxy
-    image: ghcr.io/tecnativa/docker-socket-proxy
-    keep_volumes: false
-    userns_mode: host
-    capabilities:
-      - CAP_MAC_OVERRIDE
-    restart_policy: unless-stopped
-    mounts:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
-    networks:
-      - name: watchtower
-        aliases:
-          - socket-proxy
-    env:
-      CONTAINERS: '1'
-      IMAGES: '1'
-      NETWORKS: '1'
-      POST: '1'
-
-- name: Create Watchtower container
-  community.docker.docker_container:
-    name: watchtower
-    hostname: '{{ inventory_hostname }}'
-    image: ghcr.io/containrrr/watchtower:latest
-    keep_volumes: false
-    restart_policy: unless-stopped
-    env:
-      WATCHTOWER_SCHEDULE: 0 0 4 * * *
-      WATCHTOWER_CLEANUP: 'true'
-      WATCHTOWER_REMOVE_VOLUMES: 'true'
-      DOCKER_HOST: tcp://socket-proxy:2375
-      WATCHTOWER_NO_STARTUP_MESSAGE: 'true'
-      WATCHTOWER_NOTIFICATION_URL: 'telegram://{{ watchtower_telegram_bot_token }}@telegram?chats={{ watchtower_telegram_chat_ids }}'
-    networks:
-      - name: watchtower
-      - name: watchtower-outside
-    mounts:
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    labels:
-      com.centurylinklabs.watchtower.depends-on: watchtower-socket-proxy
+- name: Start Watchtower
+  community.docker.docker_compose_v2:
+    project_src: '{{ watchtower_config_folder }}'

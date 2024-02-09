@@ -1,3 +1,4 @@
 ---
+watchtower_config_folder: '{{ (container_config_folder | mandatory, "watchtower") | path_join }}'
 watchtower_telegram_bot_token: '{{ undef(hint="Telegram Bot Token for Watchtower") }}'
 watchtower_telegram_chat_ids: '{{ undef(hint="Telegram Chat IDs that will be notified") }}'
