@@ -18,10 +18,12 @@ SWAP_PART=$(printf "$PARTED_OUTPUT" | tail -n 2 | head -n 1)
 SWAP_PART_NUMBER=$(printf "$SWAP_PART" | cut -d ' ' -f2)
 DATA_PART_NUMBER=$(printf "$PARTED_OUTPUT" | tail -n 3 | head -n 1 | cut -d ' ' -f2)
 DATA_PART_END=$(($(printf "$SWAP_PART" | tr -s ' ' | cut -d ' ' -f 3 | tr -d 'MiB')-1))
+#TODO: Use sfdisk/sgdisk
 parted -s "$DISK_PATH" rm "$CONFIG_PART_NUMBER" || true
 parted -s "$DISK_PATH" resizepart "$SWAP_PART_NUMBER" 100% || true
 parted -s "$DISK_PATH" resizepart "$DATA_PART_NUMBER" "${DATA_PART_END}MiB" || true
 #TODO: Resize btrfs filesystem
+btrfs filesystem resize max /
 partprobe "$DISK_PATH" && udevadm settle
 
 # Adding swap to fstab
@@ -32,7 +34,10 @@ printf "UUID=$(blkid | grep 'TYPE="swap"' | sed 's/.* UUID="\([a-zA-Z0-9-]*\)".*
 # Mount home subvolume
 mount -o subvol=/@/home /dev/disk/by-partlabel/p.lxroot /home
 
-# Create User (ignition should have set sudo up automatically)
+# Install docker
+zypper --non-interactive install docker
+
+# Create User
 useradd --create-home -G docker {{ hetzner_install_ansible_user }}
 SSH_FOLDER="{{ ("/home/", hetzner_install_ansible_user, ".ssh") | path_join }}"
 mkdir -pm700 "$SSH_FOLDER"
@@ -42,8 +47,9 @@ EOF
 chown -R --reference="{{ ("/home/", hetzner_install_ansible_user) | path_join }}" "$SSH_FOLDER"
 
 #-------- firewall
-# TODO configure firewalld
-zypper --non-interactive install firewalld
+zypper --non-interactive install firewalld python3-firewall
+#systemctl enable firewalld.service
+#firewall-cmd --permanent --add-port=69
 
 #-------- SELinux
 # Add port to selinux
@@ -93,7 +99,6 @@ btrfs -q subvolume create "$SUBVOLUME_PATH"
 btrfs -q property set "$SUBVOLUME_PATH" compression zstd
 btrfs quota enable "$SUBVOLUME_PATH"
 chown '--reference={{ ("/home/", hetzner_install_ansible_user) | path_join }}' "$SUBVOLUME_PATH"
-umount /home
 btrfs -q subvolume create "{{ ("/var/", "container-volumes", ".snapshots") | path_join }}"
 
 cat > /etc/snapper/configs/container-volumes <<-EOF
@@ -170,8 +175,7 @@ EOF
 # Uninstall podman
 zypper --non-interactive remove podman
 
-# Install docker and its python module
-zypper --non-interactive install docker
+# Install docker's python modules
 python3 -m ensurepip
 python3 -m pip install docker
 
@@ -180,3 +184,13 @@ sed -i '/^DOCKER_OPTS/s/"\(.*\)"/"\1 --userns-remap default"/' /etc/sysconfig/do
 
 # Enabling docker
 systemctl enable docker.service
+
+# Installing compose for ansible_user
+COMPOSE_VERSION='v2.24.5'
+COMPOSE_INSTALL_COMMAND=$(cat <<EOF
+mkdir -p "$HOME/.docker/cli-plugins"
+curl -SL "https://github.com/docker/compose/releases/download/$COMPOSE_VERSION/docker-compose-linux-x86_64" -o "$HOME/.docker/cli-plugins/docker-compose"
+chmod +x "$HOME/.docker/cli-plugins/docker-compose"
+EOF
+)
+su -c "$COMPOSE_INSTALL_COMMAND" - {{ hetzner_install_ansible_user }}

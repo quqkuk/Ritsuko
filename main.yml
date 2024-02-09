@@ -38,6 +38,36 @@
       become: true
       ansible.builtin.reboot:
         msg: Rebooting to new snapshot
+    - name: Waiting for server to come back up online after reboot
+      ansible.builtin.wait_for_connection: {}
+    - name: Adding port to firewalld
+      become: true
+      ansible.posix.firewalld:
+        port: '{{ ansible_port }}/tcp'
+        state: enabled
+        permanent: true
+        offline: true
+      when: ansible_port != 22
+    - name: Removing ssh from firewalld
+      become: true
+      ansible.posix.firewalld:
+        service: ssh
+        state: disabled
+        permanent: true
+        offline: true
+      when: ansible_port != 22
+    - name: Enable firewalld
+      become: true
+      ansible.builtin.systemd_service:
+        name: firewalld.service
+        enabled: true
+        state: started
+    - name: Restart docker
+      become: true
+      ansible.builtin.systemd_service:
+        name: docker.service
+        enabled: true
+        state: restarted
 
 - name: Managing containers on the Magisystem
   hosts: magisystem

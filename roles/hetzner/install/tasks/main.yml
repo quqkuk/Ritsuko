@@ -41,26 +41,19 @@
 - name: Gathering facts
   ansible.builtin.setup: {}
 
-# Choose the first drive that isn't mounted
-# TODO: Improve this algorithm as the rescue environment doesn't work like the test one
-- name: Choosing installation drive
-  ansible.builtin.set_fact:
-    hetzner_install_installation_drive: '{{ item }}'
-  loop: '{{ non_removable_devices }}'
-  # Set Fact runs only if the variable has not been defined and if the list of indices returned by index_of is empty
-  when: >
-    hetzner_install_installation_drive is undefined and
-    (mounted_partitions | ansible.utils.index_of('search', item, fail_on_missing=False, wantlist=True) | length) == 0
+- name: Ask for root device
   vars:
     mounted_partitions: '{{ ansible_facts.mounts | map(attribute="device") | unique }}'
-    non_removable_devices: '{{ ansible_facts.devices | dict2items | rejectattr(''value.removable'', "truthy", convert_bool=True) | map(attribute="key") | sort }}'
-  failed_when: hetzner_install_installation_drive is undefined
-
-- name: Stop before installation
+    non_removable_devices: '{{ ansible_facts.devices | dict2items | rejectattr(''value.removable'', "truthy", convert_bool=True) | map(attribute="key") }}'
   ansible.builtin.pause:
-    echo: false
-    prompt: 'MicroOS is about to be installed on {{ inventory_hostname }}''s remote device {{ (''/dev/'', hetzner_install_installation_drive) | path_join }}'
-    seconds: 10
+    prompt: 'Choose a device by writing the path to it (or choose it from this list: {{ non_removable_devices | reject("in", mounted_partitions) | sort }})'
+  register: hetzner_install_installation_drive_prompt
+  when: hetzner_install_installation_drive is not defined
+
+- name: Setting installation drive variable
+  ansible.builtin.set_fact:
+    hetzner_install_installation_drive: '{{ hetzner_install_installation_drive_prompt.user_input }}'
+  when: hetzner_install_installation_drive is not defined
 
 - name: Downloading and installing OS to disc
   block:
@@ -154,9 +147,9 @@
     msg: Rebooting to disk
     connect_timeout: 1
     reboot_timeout: 1
-  ignore_errors: true
-  #TODO: Maybe the registered value can let us discern whether we've failed to reboot or not
-  # we don't care about the machine coming up because it is probably going to be on a different port
+  register: hetzner_install_reboot
+  failed_when: not hetzner_install_reboot.rebooted
+  #TODO: Maybe by changing ansible_port and ansible_user before rebooting it can test for reboot correctly
 
 - name: Enable Hetzner Backups
   connection: local
