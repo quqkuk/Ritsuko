@@ -72,8 +72,6 @@
 - name: Managing containers on the Magisystem
   hosts: magisystem
   vars:
-    container_volumes_folder: /var/container-volumes
-    container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
     mail_server:
       # SMTP Host Emails are sent to
       host: '{{ mail_server_settings["host"] | default("") | trim }}'
@@ -119,10 +117,6 @@
 
 - name: Managing containers on Ayanami
   hosts: ayanami
-  vars:
-    container_volumes_folder: /var/container-volumes
-    container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
-    storage_pool_folder: /var/storage-pool
   roles:
     - role: ayanami/setup
     #- role: ayanami/samba

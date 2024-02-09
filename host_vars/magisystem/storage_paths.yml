@@ -1,0 +1,3 @@
+---
+container_volumes_folder: /var/container-volumes
+container_config_folder: '{{ (ansible_facts.env.HOME, "config") | path_join }}'
