@@ -86,6 +86,9 @@
       timeout: '{{ mail_server_settings["timeout"] | default("30") | int | string }}'
   roles:
     - role: edge/setup
+      tags:
+        - reverse-proxy
+        - traefik
     - role: edge/watchtower
       tags:
         - watchtower

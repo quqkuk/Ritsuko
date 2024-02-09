@@ -3,117 +3,55 @@
   ansible.builtin.file:
     path: '{{ traefik_config_folder }}'
     state: directory
+    mode: 0755
+
+- name: Ensuring traefik volumes folder exists
+  ansible.builtin.file:
+    path: '{{ traefik_volumes_folder }}'
+    state: directory
     mode: 0555
 
-- name: Moving traefik configs
+- name: Creating traefik's acme.json file
   become: true
-  block:
-    - name: Ensuring traefik dynamic config folder exists
-      ansible.builtin.file:
-        path: '{{ (traefik_config_folder, "configs") | path_join }}'
-        state: directory
-        mode: 0555
-        owner: 100000
-        group: 100000
-
-    - name: Ensuring traefik volumes folder exists
-      ansible.builtin.file:
-        path: '{{ traefik_volumes_folder }}'
-        state: directory
-        mode: 0555
-
-    - name: Checking traefik's acme file exists
-      ansible.builtin.stat:
-        path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
-      register: traefik_acme_file
-
-    - name: Creating traefik's acme.json file
-      ansible.builtin.file:
-        path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
-        state: touch
-        mode: 0600
-        owner: 100000
-        group: 100000
-      when: not (traefik_acme_file.stat.exists)
+  ansible.builtin.file:
+    path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
+    state: touch
+    mode: 0600
+    owner: 100000000
+    group: 100000000
     
-    - name: Template Traefik's Static Config
-      ansible.builtin.template:
-        src: traefik.yml.j2
-        dest: '{{ (traefik_config_folder, "traefik.yml") | path_join }}'
-        mode: 0444
-        owner: 100000
-        group: 100000
-      register: traefik_static_config
-    
-    #TODO: Consider using rsync
-    - name: Copy Traefik's dynamic file configs
-      ansible.builtin.copy:
-        src: configs/
-        dest: '{{ (traefik_config_folder, "configs") | path_join }}'
-        mode: 0444
-        owner: 100000
-        group: 100000
+- name: Template Traefik's Static Config
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: '{{ (traefik_config_folder, "traefik.yml") | path_join }}'
+    mode: 0444
+  register: traefik_static_config
 
-- name: Create traefik network
-  community.docker.docker_network:
-    name: traefik
-    driver: bridge
-    internal: true
-    state: present
+#TODO: Consider using rsync
+- name: Copy Traefik's dynamic file configs
+  ansible.builtin.copy:
+    src: configs/
+    dest: '{{ (traefik_config_folder, "configs") | path_join }}'
+    mode: 0444
 
-- name: Create traefik-outside network
-  community.docker.docker_network:
-    name: traefik-outside
-    driver: bridge
-    internal: false
-    state: present
+- name: Template Traefik's Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: '{{ (traefik_config_folder, "compose.yaml") | path_join }}'
+    mode: 0444
 
-- name: Create socket proxy container
-  community.docker.docker_container:
-    name: traefik-socket-proxy
-    image: ghcr.io/tecnativa/docker-socket-proxy
-    keep_volumes: false
-    userns_mode: host
-    capabilities:
-      - CAP_MAC_OVERRIDE
-    restart_policy: unless-stopped
-    mounts:
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
-    networks:
-      - name: traefik
-        aliases:
-          - 'socket-proxy'
-    env:
-      CONTAINERS: '1'
+- name: Adding services to firewalld
+  become: true
+  ansible.posix.firewalld:
+    service: '{{ item }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  with_items:
+    - https
+    - http
 
-- name: Create reverse proxy container
-  community.docker.docker_container:
-    name: traefik
-    image: traefik
-    keep_volumes: false
-    restart_policy: unless-stopped
-    restart: '{{ traefik_static_config is changed }}'
-    mounts:
-      - type: bind
-        source: '{{ traefik_config_folder }}'
-        target: /etc/traefik
-        read_only: true
-      - type: bind
-        source: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
-        target: /acme.json
-    networks:
-      - name: traefik
-      - name: traefik-outside
-      - name: '{{ reverse_proxy_network }}'
-    published_ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
-      - '127.0.0.1:8080:8080'
-      - '127.0.0.1:8081:8081'
-      - '127.0.0.1:8082:8082'
-    labels:
-      com.centurylinklabs.watchtower.depends-on: traefik-socket-proxy
+- name: Start traefik
+  community.docker.docker_compose_v2:
+    project_src: '{{ traefik_config_folder }}'
+    state: '{% if traefik_static_config is changed %}restarted{% else %}present{% endif %}'

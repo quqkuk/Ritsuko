@@ -1,0 +1,44 @@
+---
+services:
+  socket-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy
+    userns_mode: host
+    restart: unless-stopped
+    cap_add:
+      - CAP_MAC_OVERRIDE
+    environment:
+      CONTAINERS: 1
+    networks:
+      - default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  traefik:
+    image: traefik
+    restart: unless-stopped
+    depends_on:
+      - socket-proxy
+    networks:
+      - default
+      - outside
+      - reverse-proxy-network
+    volumes:
+      - ./configs:/etc/traefik/configs:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - '{{ (traefik_volumes_folder, "acme.json") | path_join }}:/acme.json'
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+      - 127.0.0.1:8080:8080
+    labels:
+      com.centurylinklabs.watchtower.depends-on: traefik-socket-proxy
+
+networks:
+  default:
+    internal: true
+  outside:
+    internal: false
+  reverse-proxy-network:
+    name: '{{ reverse_proxy_network }}'
+    external: true
