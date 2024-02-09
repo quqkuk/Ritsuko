@@ -1,0 +1,27 @@
+- name: Update facts
+  ansible.builtin.setup: {}
+
+- name: Gather informations about docker networks
+  community.docker.docker_host_info:
+    networks: true
+    verbose_output: true
+  register: edge_docker_fix_host_info
+
+- name: Get the interface names of the internal docker network bridges
+  vars:
+    edge_docker_fix_network_gateways: >
+      {{ edge_docker_fix_host_info.networks | selectattr('Internal') | map(attribute='IPAM.Config') | flatten | map(attribute='Gateway') }}
+  ansible.builtin.set_fact:
+    edge_docker_fix_internal_interfaces: >
+      {{ ansible_facts | dict2items | selectattr('value.ipv4.address', 'defined') | selectattr('value.ipv4.address', 'in', edge_docker_fix_network_gateways)
+                       | map(attribute='value.device') }}
+
+- name: Insert internal interfaces in firewalld's docker zone
+  become: true
+  ansible.posix.firewalld:
+    zone: docker
+    interface: '{{ item }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ edge_docker_fix_internal_interfaces }}'

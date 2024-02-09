@@ -117,6 +117,24 @@
     - role: edge/piped
       tags:
         - piped
+    #TODO: Run this role as an imported task instead of adding all tags
+    - role: edge/fix-docker-internal-firewalld
+      tags:
+        - reverse-proxy
+        - traefik
+        - watchtower
+        - updates
+        - reverse-proxy
+        - traefik
+        - auth
+        - authentik
+        - password
+        - bitwarden
+        - vaultwarden
+        - cloud
+        - nextcloud
+        - rss
+        - piped
 
 - name: Managing containers on Ayanami
   hosts: ayanami
@@ -132,7 +150,7 @@
       tags:
         - reverse-proxy
         - traefik
-    - role: ayanami/fix-docker-internal-firewalld
+    - role: edge/fix-docker-internal-firewalld
       tags:
         - reverse-proxy
         - traefik
