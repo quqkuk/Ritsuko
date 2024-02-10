@@ -1,0 +1,79 @@
+---
+services:
+  database:
+    image: mariadb
+    restart: unless-stopped
+    networks:
+      - default
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
+      MARIADB_DATABASE: bwarden
+      MARIADB_USER: bwarden
+      MARIADB_PASSWORD: '{{ bitwarden_database_password }}'
+    volumes:
+      - '{{ (bitwarden_data_folder, "data") | path_join }}:/var/lib/mysql'
+      - /etc/localtime:/etc/localtime:ro
+
+  vault:
+    image: vaultwarden/server:alpine
+    restart: unless-stopped
+    networks:
+      - default
+      - outside
+      - reverse-proxy-network
+    environment:
+      ADMIN_TOKEN: '{{ bitwarden_admin_token }}'
+      WEBSOCKET_ENABLED: 'true'
+      SIGNUPS_ALLOWED: 'false'
+      INVITATIONS_ALLOWED: 'true'
+      DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@database/bwarden'
+      SMTP_HOST: '{{ mail_server["host"] }}'
+      SMTP_FROM: '{{ bitwarden_mail_from | default("") }}'
+      SMTP_PORT: '{{ mail_server["port"] }}'
+      SMTP_SECURITY: '{{ mail_server["use_ssl"] | bool | ternary("force_tls", mail_server["use_tls"] | bool | ternary("starttls", "off")) }}'
+      SMTP_USERNAME: '{{ mail_server["username"] }}'
+      SMTP_PASSWORD: '{{ mail_server["password"] }}'
+      DOMAIN: https://bwarden.magisystem.xyz
+      INVITATION_ORG_NAME: Magisystem
+      PASSWORD_ITERATIONS: '600000'
+    volumes:
+      - '{{ (bitwarden_data_folder, "state") | path_join }}:/data'
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      com.centurylinklabs.watchtower.depends-on: bitwarden-database
+      traefik.enable: 'true'
+      traefik.http.routers.bwarden-web.entryPoints: https
+      traefik.http.routers.bwarden-web.rule: Host(`bwarden.magisystem.xyz`) && !PathPrefix(`/admin`)
+      traefik.http.routers.bwarden-web.service: bwarden-web
+      traefik.http.routers.bwarden-admin.entryPoints: admin
+      traefik.http.routers.bwarden-admin.rule: PathPrefix(`/admin`)
+      traefik.http.routers.bwarden-admin.service: bwarden-web
+      traefik.http.routers.bwarden-websocket.entryPoints: https
+      traefik.http.routers.bwarden-websocket.rule: Host(`bwarden.magisystem.xyz`) && Path(`/notifications/hub`)
+      traefik.http.routers.bwarden-websocket.service: bwarden-websocket
+      traefik.http.services.bwarden-web.loadbalancer.server.port: '80'
+      traefik.http.services.bwarden-websocket.loadbalancer.server.port: '3012'
+
+  ldap-inviter:
+    image: vividboarder/vaultwarden_ldap
+    restart: unless-stopped
+    networks:
+      - default
+      - ldap
+    environment:
+      CONFIG_PATH: /config.toml
+    volumes:
+      - ./vaultwarden_ldap.toml:/config.toml:ro
+      - /etc/localtime:/etc/localtime:ro
+
+networks:
+  default:
+    internal: true
+  outside:
+    internal: false
+  ldap:
+    name: ldap
+    external: true
+  reverse-proxy-network:
+    name: '{{ reverse_proxy_network }}'
+    external: true

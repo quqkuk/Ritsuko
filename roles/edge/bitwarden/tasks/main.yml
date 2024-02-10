@@ -5,159 +5,50 @@
     state: directory
     mode: 0755
 
+- name: Ensuring config folder exists
+  ansible.builtin.file:
+    path: '{{ bitwarden_config_folder }}'
+    state: directory
+    mode: 0700
+
 - name: Creating Bitwarden volume folders
   become: true
   block:
-    - name: Checking database folder exists
-      ansible.builtin.stat:
-        path: '{{ (bitwarden_data_folder, "data") | path_join }}'
-      register: bitwarden_database_folder
-
     - name: Creating database folder
       ansible.builtin.file:
         path: '{{ (bitwarden_data_folder, "data") | path_join }}'
         state: directory
         mode: 0700
-        owner: 101000
-        group: 101000
-      when: not (bitwarden_database_folder.stat.exists)
-    
-    - name: Checking application folder exists
-      ansible.builtin.stat:
-        path: '{{ (bitwarden_data_folder, "state") | path_join }}'
-      register: bitwarden_state_folder
+        owner: 100000999
+        group: 100000999
 
     - name: Creating application folder
       ansible.builtin.file:
         path: '{{ (bitwarden_data_folder, "state") | path_join }}'
         state: directory
         mode: 0700
-        owner: 101000
-        group: 101000
-      when: not (bitwarden_state_folder.stat.exists)
+        owner: 100001000
+        group: 100001000
 
     - name: Creating config file
       ansible.builtin.template:
         src: vaultwarden_ldap.toml.j2
-        dest: '{{ bitwarden_ldap_config_file }}'
-        mode: 0744
-        owner: 101000
-        group: 101000
+        dest: '{{ (bitwarden_config_folder, "vaultwarden_ldap.toml") | path_join }}'
+        mode: 0500
+        owner: 100001000
+        group: 100001000
       register: bitwarden_ldap_config_template
 
-- name: Ensuring Bitwarden network exists
-  community.docker.docker_network:
-    name: bwarden
-    driver: bridge
-    internal: true
-    state: present
+- name: Templating Vaultwarden's Compose
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: '{{ (bitwarden_config_folder, "compose.yml") | path_join }}'
+    mode: 0700
 
-- name: Create Database container
-  community.docker.docker_container:
-    name: bitwarden-database
-    image: mariadb
-    restart_policy: unless-stopped
-    keep_volumes: false
-    env:
-      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
-      MARIADB_DATABASE: bwarden
-      MARIADB_USER: bwarden
-      MARIADB_PASSWORD: '{{ bitwarden_database_password }}'
-    mounts:
-      - type: bind
-        source: '{{ (bitwarden_data_folder, "data") | path_join }}'
-        target: /var/lib/mysql
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    networks:
-      - name: bwarden
-        aliases:
-          - database
-
-- name: Ensuring Bitwarden Outside network exists
-  community.docker.docker_network:
-    name: bwarden-outside
-    driver: bridge
-    internal: false
-    state: present
-
-- name: Create Vaultwarden container
-  community.docker.docker_container:
-    name: bitwarden
-    image: vaultwarden/server:alpine
-    keep_volumes: false
-    restart_policy: unless-stopped
-    env:
-      WEBSOCKET_ENABLED: 'true'
-      SIGNUPS_ALLOWED: 'false'
-      INVITATIONS_ALLOWED: 'true'
-      #This should be ok as traefik is supposed to expose the admin panel only to the other entrypoint
-      DISABLE_ADMIN_TOKEN: 'true'
-      DATABASE_URL: 'mysql://bwarden:{{ bitwarden_database_password }}@database/bwarden'
-      SMTP_HOST: '{{ mail_server["host"] }}'
-      SMTP_FROM: '{{ bitwarden_mail_from | default("") }}'
-      SMTP_PORT: '{{ mail_server["port"] }}'
-      SMTP_SECURITY: '{{ mail_server["use_ssl"] | bool | ternary("force_tls", mail_server["use_tls"] | bool | ternary("starttls", "off")) }}'
-      SMTP_USERNAME: '{{ mail_server["username"] }}'
-      SMTP_PASSWORD: '{{ mail_server["password"] }}'
-      DOMAIN: https://bwarden.magisystem.xyz
-      INVITATION_ORG_NAME: Magisystem
-      PASSWORD_ITERATIONS: '600000'
-    networks:
-      - name: bwarden
-        aliases:
-          - bwarden
-      - name: bwarden-outside
-      - name: '{{ reverse_proxy_network }}'
-    mounts:
-      - type: bind
-        source: '{{ (bitwarden_data_folder, "state") | path_join }}'
-        target: /data
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    labels:
-      com.centurylinklabs.watchtower.depends-on: bitwarden-database
-      traefik.enable: 'true'
-      traefik.http.routers.bwarden-web.entryPoints: https
-      traefik.http.routers.bwarden-web.rule: Host(`bwarden.magisystem.xyz`) && !PathPrefix(`/admin`)
-      traefik.http.routers.bwarden-web.service: bwarden-web
-      traefik.http.routers.bwarden-admin.entryPoints: admin
-      traefik.http.routers.bwarden-admin.rule: PathPrefix(`/admin`)
-      traefik.http.routers.bwarden-admin.service: bwarden-web
-      traefik.http.routers.bwarden-websocket.entryPoints: https
-      traefik.http.routers.bwarden-websocket.rule: Host(`bwarden.magisystem.xyz`) && Path(`/notifications/hub`)
-      traefik.http.routers.bwarden-websocket.service: bwarden-websocket
-      traefik.http.services.bwarden-web.loadbalancer.server.port: '80'
-      traefik.http.services.bwarden-websocket.loadbalancer.server.port: '3012'
-
-- name: Create Vaultwarden LDAP container
-  community.docker.docker_container:
-    name: bitwarden-ldap
-    image: vividboarder/vaultwarden_ldap
-    keep_volumes: false
-    restart_policy: unless-stopped
-    restart: '{{ bitwarden_ldap_config_template is changed }}'
-    env:
-      CONFIG_PATH: /config.toml
-      #RUST_BACKTRACE: '1'
-    networks:
-      - name: bwarden
-      - name: ldap
-    mounts:
-      - type: bind
-        source: '{{ bitwarden_ldap_config_file }}'
-        target: /config.toml
-        read_only: true
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    labels:
-      com.centurylinklabs.watchtower.depends-on: bitwarden
+- name: Start Bitwarden
+  community.docker.docker_compose_v2:
+    project_src: '{{ bitwarden_config_folder }}'
+    state: '{% if bitwarden_ldap_config_template is changed %}restarted{% else %}present{% endif %}'
 
 - name: Create DNS Records for bwarden.magisystem.xyz
   ansible.builtin.import_role:
