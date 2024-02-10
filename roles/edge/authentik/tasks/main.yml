@@ -21,7 +21,6 @@
         mode: 0700
         owner: 100000070
         group: 100000070
-        recurse: true
     
     - name: Ensuring worker media folder exists
       ansible.builtin.file:
