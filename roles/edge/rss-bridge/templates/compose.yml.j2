@@ -1,0 +1,33 @@
+---
+services:
+  server:
+    hostname: '{{ inventory_hostname }}'
+    image: rssbridge/rss-bridge
+    restart: unless-stopped
+    networks:
+      - outside
+      - reverse-proxy-network
+    volumes:
+      - ./config:/config:ro
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.rss-bridge.entryPoints: https
+      traefik.http.routers.rss-bridge.rule: Host(`rss.magisystem.xyz`)
+      traefik.http.routers.rss-bridge.service: rss-bridge
+      traefik.http.routers.rss-bridge.middlewares: rss-bridge-authentik
+      traefik.http.routers.rss-bridge-feed.entryPoints: https
+      traefik.http.routers.rss-bridge-feed.rule: Host(`rss.magisystem.xyz`) && (PathPrefix(`/static`) || Query(`action=display`) || Query(`action=health`))
+      traefik.http.routers.rss-bridge-feed.service: rss-bridge
+      traefik.http.routers.rss-bridge-authentik.entryPoints: https
+      traefik.http.routers.rss-bridge-authentik.rule: Host(`rss.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
+      traefik.http.routers.rss-bridge-authentik.service: 'authentik@{{ authentik_service_provider }}'
+      traefik.http.middlewares.rss-bridge-authentik.forwardauth.address: https://rss.magisystem.xyz/outpost.goauthentik.io/auth/traefik
+      traefik.http.middlewares.rss-bridge-authentik.forwardauth.trustForwardHeader: 'true'
+      traefik.http.services.rss-bridge.loadbalancer.server.port: '80'
+
+networks:
+  outside:
+    internal: false
+  reverse-proxy-network:
+    name: '{{ reverse_proxy_network }}'
+    external: true
