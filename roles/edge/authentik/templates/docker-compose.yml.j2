@@ -97,10 +97,8 @@ services:
     environment:
       AUTHENTIK_PORT_LDAP: '389'
       AUTHENTIK_PORT_LDAPS: '636'
-      AUTHENTIK_HOST: https://authentik:9443
-      AUTHENTIK_INSECURE: 'false'
-      #AUTHENTIK_HOST: http://authentik:9000
-      #AUTHENTIK_INSECURE: 'true'
+      AUTHENTIK_HOST: https://server:9443
+      AUTHENTIK_INSECURE: 'true'
       AUTHENTIK_TOKEN: '{{ authentik_ldap_token }}'
     networks:
       - default
@@ -114,6 +112,7 @@ networks:
     internal: true
   {% if authentik_ldap_token is defined -%}
   ldap:
+    name: ldap
     internal: true
   {% endif -%}
   outside:
