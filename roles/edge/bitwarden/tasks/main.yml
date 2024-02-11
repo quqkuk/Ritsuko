@@ -41,14 +41,22 @@
 
 - name: Templating Vaultwarden's Compose
   ansible.builtin.template:
-    src: compose.yml.j2
+    src: compose.yml
     dest: '{{ (bitwarden_config_folder, "compose.yml") | path_join }}'
     mode: 0700
 
 - name: Start Bitwarden
   community.docker.docker_compose_v2:
     project_src: '{{ bitwarden_config_folder }}'
-    state: '{% if bitwarden_ldap_config_template is changed %}restarted{% else %}present{% endif %}'
+  register: bitwarden_compose_started
+
+- name: Restart LDAP Inviter
+  community.docker.docker_compose_v2:
+    project_src: '{{ bitwarden_config_folder }}'
+    state: restarted
+    services:
+      - ldap-inviter
+  when: bitwarden_ldap_config_template is changed and (bitwarden_compose_started.actions | selectattr('id', 'contains', 'ldap-inviter') | length) <= 0
 
 - name: Create DNS Records for bwarden.magisystem.xyz
   ansible.builtin.import_role:

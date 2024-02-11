@@ -4,7 +4,6 @@
     path: '{{ traefik_config_folder }}'
     state: directory
     mode: 0755
-
 - name: Ensuring traefik volumes folder exists
   ansible.builtin.file:
     path: '{{ traefik_volumes_folder }}'
@@ -36,7 +35,7 @@
 
 - name: Template Traefik's Compose file
   ansible.builtin.template:
-    src: compose.yml.j2
+    src: compose.yml
     dest: '{{ (traefik_config_folder, "compose.yaml") | path_join }}'
     mode: 0444
 
@@ -54,4 +53,12 @@
 - name: Start traefik
   community.docker.docker_compose_v2:
     project_src: '{{ traefik_config_folder }}'
-    state: '{% if traefik_static_config is changed %}restarted{% else %}present{% endif %}'
+  register: traefik_compose_started
+
+- name: Restart traefik
+  community.docker.docker_compose_v2:
+    project_src: '{{ traefik_config_folder }}'
+    state: restarted
+    services:
+      - traefik
+  when: traefik_static_config is changed and (traefik_compose_started.actions | selectattr('id', 'contains', 'traefik') | length) <= 0

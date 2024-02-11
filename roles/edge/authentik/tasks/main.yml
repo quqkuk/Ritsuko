@@ -48,7 +48,7 @@
 
 - name: Templating authentik's Compose
   ansible.builtin.template:
-    src: docker-compose.yml.j2
+    src: docker-compose.yml
     dest: '{{ (authentik_config_folder, "compose.yml") | path_join }}'
 
 - name: Starting authentik
