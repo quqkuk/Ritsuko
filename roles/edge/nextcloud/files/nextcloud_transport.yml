@@ -1,0 +1,11 @@
+---
+http:
+  serversTransports:
+    nextcloud_transport:
+      # To ignore the LinuxServer image's self-signed cert
+      insecureSkipVerify: true
+      # For UnifiedPush
+      forwardingTimeouts:
+        #dialTimeout: 10m
+        responseHeaderTimeout: 10m
+        idleConnTimeout: 10m

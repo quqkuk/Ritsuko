@@ -1,4 +1,10 @@
 ---
+- name: Ensuring config folder exists
+  ansible.builtin.file:
+    path: '{{ nextcloud_config_folder }}'
+    state: directory
+    mode: 0755
+
 - name: Ensuring data folder exists
   ansible.builtin.file:
     path: '{{ nextcloud_data_folder }}'
@@ -8,214 +14,40 @@
 - name: Creating Nextcloud volume folders
   become: true
   block:
-    - name: Checking database folder exists
-      ansible.builtin.stat:
-        path: '{{ (nextcloud_data_folder, "data") | path_join }}'
-      register: nextcloud_database_folder
-
     - name: Creating database folder
       ansible.builtin.file:
         path: '{{ (nextcloud_data_folder, "data") | path_join }}'
         state: directory
         mode: 0700
-        owner: 101000
-        group: 101000
-      when: not (nextcloud_database_folder.stat.exists)
+        owner: 100000999
+        group: 100000999
     
-    - name: Checking application folder exists
-      ansible.builtin.stat:
-        path: '{{ (nextcloud_data_folder, "app") | path_join }}'
-      register: nextcloud_application_folder
-
-    - name: Creating application folder
+    - name: Creating application folders
       ansible.builtin.file:
-        path: '{{ (nextcloud_data_folder, "app") | path_join }}'
+        path: '{{ item }}'
         state: directory
         mode: 0700
-        owner: 101000
-        group: 101000
-      when: not (nextcloud_application_folder.stat.exists)
+        owner: 100001000
+        group: 100001000
+      with_items:
+        - '{{ (nextcloud_data_folder, "app-config") | path_join }}'
+        - '{{ (nextcloud_data_folder, "app-data") | path_join }}'
 
-- name: Ensuring Nextcloud network exists
-  community.docker.docker_network:
-    name: nextcloud
-    driver: bridge
-    internal: true
-    state: present
+- name: Copy Server Transport for Traefik
+  ansible.builtin.copy:
+    src: nextcloud_transport.yml
+    dest: '{{ traefik_dynamic_config_folder }}'
+    mode: 0444
 
-- name: Create Redis container
-  community.docker.docker_container:
-    name: nextcloud-redis
-    image: redis:alpine
-    command: 'redis-server --requirepass {{ nextcloud_redis_password }}'
-    restart_policy: unless-stopped
-    keep_volumes: false
-    networks:
-      - name: nextcloud
-        aliases:
-          - redis
+- name: Templating Nextcloud's compose
+  ansible.builtin.template:
+    src: compose.yml
+    dest: '{{ (nextcloud_config_folder, "compose.yml") | path_join }}'
+    mode: 0700
 
-- name: Create MariaDB container
-  community.docker.docker_container:
-    name: nextcloud-database
-    image: mariadb
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
-    restart_policy: unless-stopped
-    keep_volumes: false
-    env:
-      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
-      MARIADB_DATABASE: nextcloud
-      MARIADB_USER: nextcloud
-      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
-    mounts:
-      - type: bind
-        source: '{{ (nextcloud_data_folder, "data") | path_join }}'
-        target: /var/lib/mysql
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    networks:
-      - name: nextcloud
-        aliases:
-          - database
-
-- name: Ensuring Nextcloud Outside network exists
-  community.docker.docker_network:
-    name: nextcloud-outside
-    driver: bridge
-    internal: false
-    state: present
-
-#TODO: Add capabilities for mounting/mount-binding and using seccomp if possible and secure
-#- name: Create CODE container
-#  community.docker.docker_container:
-#    name: nextcloud-code
-#    image: collabora/code
-#    keep_volumes: false
-#    restart_policy: unless-stopped
-#    env:
-#      DONT_GEN_SSL_CERT: 'true'
-#      extra_params: '--o:ssl.enable=false --o:ssl.termination=true'
-#    networks:
-#      #- name: nextcloud-outside
-#      - name: '{{ reverse_proxy_network }}'
-#    mounts:
-#      - type: bind
-#        source: /etc/localtime
-#        target: /etc/localtime
-#        read_only: true
-#    labels:
-#      #com.centurylinklabs.watchtower.depends-on: nextcloud-redis,nextcloud-database
-#      traefik.enable: 'true'
-#      traefik.http.routers.collabora.entryPoints: https
-#      traefik.http.routers.collabora.rule: Host(`office.magisystem.xyz`)
-#      traefik.http.services.collabora.loadbalancer.server.port: '9980'
-
-#TODO: Run sed -i '/0 => '"'"'cloud.magisystem.xyz'"'"'/a \ \ \ \ 1 => '"'"'cloud'"'"'' config/config.php with blockinfile
-#TODO: change trusted_proxies with blockinfile
-- name: Create Nextcloud container
-  community.docker.docker_container:
-    name: nextcloud
-    image: nextcloud
-    keep_volumes: false
-    restart_policy: unless-stopped
-    env:
-      MARIADB_DATABASE: nextcloud
-      MARIADB_USER: nextcloud
-      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
-      MYSQL_HOST: database
-      REDIS_HOST: redis
-      #TRUSTED_PROXIES=192.168.0.0/24
-      #APACHE_DISABLE_REWRITE_IP=1
-      #OVERWRITEHOST=cloud.magisystem.xyz
-      OVERWRITEPROTOCOL: https
-      NEXTCLOUD_TRUSTED_DOMAINS: cloud.magisystem.xyz
-      TRUSTED_PROXIES: '{{ reverse_proxy_network_subnet }}'
-      REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
-      SMTP_HOST: '{{ mail_server["host"] }}'
-      SMTP_SECURE: '{{ mail_server["use_ssl"] | bool | ternary("ssl", mail_server["use_tls"] | bool | ternary("tls", "")) }}'
-      SMTP_PORT: '{{ mail_server["port"] }}'
-      SMTP_AUTHTYPE: '{{ mail_server["username"] | bool | ternary("LOGIN", "PLAIN") }}'
-      SMTP_NAME: '{{ mail_server["username"] }}'
-      SMTP_PASSWORD: '{{ mail_server["password"] }}'
-      MAIL_FROM_ADDRESS: '{{ nextcloud_mail_from | default("") }}'
-    networks:
-      - name: nextcloud
-        aliases:
-          - cloud
-      - name: nextcloud-outside
-      - name: '{{ reverse_proxy_network }}'
-    mounts:
-      - type: bind
-        source: '{{ (nextcloud_data_folder, "app") | path_join }}'
-        target: /var/www/html
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    labels:
-      com.centurylinklabs.watchtower.monitor-only: 'true'
-      com.centurylinklabs.watchtower.depends-on: nextcloud-redis,nextcloud-database
-      traefik.enable: 'true'
-      traefik.http.routers.nextcloud.entryPoints: https
-      traefik.http.routers.nextcloud.rule: Host(`cloud.magisystem.xyz`)
-      traefik.http.routers.nextcloud.middlewares: nextcloud-header,nextcloud-redirect
-      traefik.http.middlewares.nextcloud-header.headers.stsSeconds: '15552000'
-      traefik.http.middlewares.nextcloud-redirect.redirectregex.regex: /.well-known/(card|cal)dav
-      traefik.http.middlewares.nextcloud-redirect.redirectregex.replacement: /remote.php/dav/
-      traefik.http.middlewares.nextcloud-redirect.redirectregex.permanent: 'true'
-      traefik.http.services.nextcloud.loadbalancer.server.port: '80'
-      traefik.http.services.nextcloud.loadbalancer.serversTransport: nextcloud_transport@file
-
-- name: Create Nextcloud cronjob container
-  community.docker.docker_container:
-    name: nextcloud-cronjobs
-    image: nextcloud
-    entrypoint: /cron.sh
-    keep_volumes: false
-    restart_policy: unless-stopped
-    networks:
-      - name: nextcloud
-      - name: nextcloud-outside
-    mounts:
-      - type: bind
-        source: '{{ (nextcloud_data_folder, "app") | path_join }}'
-        target: /var/www/html
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-    labels:
-      com.centurylinklabs.watchtower.monitor-only: 'true'
-      com.centurylinklabs.watchtower.depends-on: nextcloud
-
-- name: Create UnifiedPush proxy container
-  community.docker.docker_container:
-    name: nextcloud-up-proxy
-    image: common-proxies
-    keep_volumes: false
-    restart_policy: unless-stopped
-    env:
-      UP_GATEWAY_MATRIX_ENABLE: 'false'
-      UP_GATEWAY_TRANSPARENT_DRAFT4_ENABLE: 'true'
-      UP_GATEWAY_TRANSPARENT_DRAFT4_ADDRESS: cloud
-      UP_GATEWAY_TRANSPARENT_DRAFT4_SCHEME: http
-      UP_GATEWAY_TRANSPARENT_DRAFT4_PATH: /index.php/apps/uppush/push/
-      UP_GATEWAY_ALLOWEDHOSTS: cloud
-    networks:
-      - name: nextcloud
-      - name: '{{ reverse_proxy_network }}'
-    labels:
-      com.centurylinklabs.watchtower.enable: 'false'
-      com.centurylinklabs.watchtower.depends-on: nextcloud
-      traefik.enable: 'true'
-      traefik.http.routers.up-proxy.entryPoints: https
-      traefik.http.routers.up-proxy.rule: Host(`cloud.magisystem.xyz`) && Method(`POST`) && PathPrefix(`/{first:/?}index.php/apps/uppush/{second:/?}push/`)
-      traefik.http.routers.up-proxy.middlewares: up-proxy-path-normaliser
-      traefik.http.middlewares.up-proxy-path-normaliser.ReplacePathRegex.regex: '^//?index\.php/apps/uppush//?push/(.*)'
-      traefik.http.middlewares.up-proxy-path-normaliser.ReplacePathRegex.replacement: '/index.php/apps/uppush/push/$1'
-      traefik.http.services.up-proxy.loadbalancer.server.port: '5000'
+- name: Start Nextcloud
+  community.docker.docker_compose_v2:
+    project_src: '{{ nextcloud_config_folder }}'
 
 - name: Create DNS Records for cloud.magisystem.xyz
   ansible.builtin.import_role:

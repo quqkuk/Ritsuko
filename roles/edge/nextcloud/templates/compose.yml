@@ -1,0 +1,80 @@
+---
+services:
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - default
+
+  database:
+    image: mariadb
+    restart: unless-stopped
+    networks:
+      - default
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
+      MARIADB_DATABASE: nextcloud
+      MARIADB_USER: nextcloud
+      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
+    volumes:
+      - '{{ (nextcloud_data_folder, "data") | path_join }}:/var/lib/mysql'
+      - /etc/localtime:/etc/localtime:ro
+
+  nextcloud:
+    image: lscr.io/linuxserver/nextcloud:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - database
+    networks:
+      - default
+      - outside
+      - reverse-proxy-network
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Rome
+    volumes:
+      - '{{ (nextcloud_data_folder, "app-config") | path_join }}:/config'
+      - '{{ (nextcloud_data_folder, "app-data") | path_join }}:/data'
+    labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
+      traefik.enable: 'true'
+      traefik.http.routers.nextcloud.entryPoints: https
+      traefik.http.routers.nextcloud.rule: Host(`cloud.magisystem.xyz`)
+      traefik.http.routers.nextcloud.middlewares: nextcloud-header
+      traefik.http.middlewares.nextcloud-header.headers.stsSeconds: 15552000
+      traefik.http.services.nextcloud.loadbalancer.server.scheme: https
+      traefik.http.services.nextcloud.loadbalancer.server.port: 443
+      traefik.http.services.nextcloud.loadbalancer.serversTransport: nextcloud_transport@file
+
+networks:
+  default:
+    internal: true
+  outside:
+    internal: false
+  reverse-proxy-network:
+    name: '{{ reverse_proxy_network }}'
+    external: true
+
+##TODO: Run sed -i '/0 => '"'"'cloud.magisystem.xyz'"'"'/a \ \ \ \ 1 => '"'"'cloud'"'"'' config/config.php with blockinfile
+##TODO: change trusted_proxies with blockinfile
+#      MARIADB_DATABASE: nextcloud
+#      MARIADB_USER: nextcloud
+#      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
+#      MYSQL_HOST: database
+#      REDIS_HOST: redis
+#      #TRUSTED_PROXIES=192.168.0.0/24
+#      #APACHE_DISABLE_REWRITE_IP=1
+#      #OVERWRITEHOST=cloud.magisystem.xyz
+#      OVERWRITEPROTOCOL: https
+#      NEXTCLOUD_TRUSTED_DOMAINS: cloud.magisystem.xyz
+#      TRUSTED_PROXIES: '{{ reverse_proxy_network_subnet }}'
+#      REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
+#      SMTP_HOST: '{{ mail_server["host"] }}'
+#      SMTP_SECURE: '{{ mail_server["use_ssl"] | bool | ternary("ssl", mail_server["use_tls"] | bool | ternary("tls", "")) }}'
+#      SMTP_PORT: '{{ mail_server["port"] }}'
+#      SMTP_AUTHTYPE: '{{ mail_server["username"] | bool | ternary("LOGIN", "PLAIN") }}'
+#      SMTP_NAME: '{{ mail_server["username"] }}'
+#      SMTP_PASSWORD: '{{ mail_server["password"] }}'
+#      MAIL_FROM_ADDRESS: '{{ nextcloud_mail_from | default("") }}'
