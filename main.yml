@@ -57,9 +57,6 @@
       timeout: '{{ mail_server_settings["timeout"] | default("30") | int | string }}'
   roles:
     - role: edge/setup
-      tags:
-        - reverse-proxy
-        - traefik
     - role: edge/watchtower
       tags:
         - watchtower
@@ -88,30 +85,15 @@
     - role: edge/piped
       tags:
         - piped
-    #TODO: Run this role as an imported task instead of adding all tags
     - role: edge/fix-docker-internal-firewalld
-      tags:
-        - reverse-proxy
-        - traefik
-        - watchtower
-        - updates
-        - reverse-proxy
-        - traefik
-        - auth
-        - authentik
-        - password
-        - bitwarden
-        - vaultwarden
-        - cloud
-        - nextcloud
-        - rss
-        - piped
 
 - name: Managing containers on Ayanami
   hosts: ayanami
   roles:
     - role: ayanami/setup
     #- role: ayanami/samba
+    #  tags:
+    #    - samba
     - role: edge/setup
     - role: edge/watchtower
       tags:
@@ -122,11 +104,6 @@
         - reverse-proxy
         - traefik
     - role: edge/fix-docker-internal-firewalld
-      tags:
-        - reverse-proxy
-        - traefik
-        - watchtower
-        - updates
 
 - name: Configuring DNS for Migadu
   hosts: localhost
