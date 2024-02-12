@@ -180,7 +180,7 @@ python3 -m ensurepip
 python3 -m pip install docker
 
 # Forcing subuids/subgids
-sed -i '/^DOCKER_OPTS/s/"\(.*\)"/"\1 --userns-remap default"/' /etc/sysconfig/docker
+sed -i '/^DOCKER_OPTS/s/"\(.*\)"/"\1 --userns-remap default --default-address-pool base=172.17.0.0/12,size=24"/' /etc/sysconfig/docker
 
 # Enabling docker
 systemctl enable docker.service
