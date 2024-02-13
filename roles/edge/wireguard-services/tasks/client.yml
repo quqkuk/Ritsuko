@@ -10,8 +10,8 @@
     - name: Read peer configuration
       become: true
       ansible.builtin.slurp:
-        path: '{{ (hostvars.magisystem.wireguard_services_config_volume_folder |
-                     default((hostvars.magisystem.container_volumes_folder | mandatory, "wireguard-services") | path_join) ,
+        path: '{{ (hostvars[wireguard_services_server].wireguard_services_config_volume_folder |
+                     default((hostvars[wireguard_services_server].container_volumes_folder | mandatory, "wireguard-services") | path_join) ,
                    "peer_"+inventory_hostname,
                    "peer_"+inventory_hostname+".conf") | path_join }}'
       register: wireguard_services_peer_config
