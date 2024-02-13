@@ -35,7 +35,7 @@
     - name: Waiting for server to come back up online after reboot
       ansible.builtin.wait_for_connection: {}
     - name: Run post-install
-      ansible.bultin.import_role:
+      ansible.builtin.import_role:
         name: hetzner/install
         defaults_from: post-install
         tasks_from: post-install

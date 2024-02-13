@@ -7,6 +7,7 @@ compose:
 group: hetzner
 groups:
   dns: true
+  docker: true
 cache: true
 cache_plugin: community.general.pickle
 cache_prefix: hcloud

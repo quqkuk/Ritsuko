@@ -1,3 +1,13 @@
-[dns]
+[all]
 localhost ansible_connection=ansible.builtin.local
+ayanami
+
+[dns]
+localhost
+ayanami
+
+[docker]
+ayanami
+
+[wireguard_services_clients]
 ayanami
