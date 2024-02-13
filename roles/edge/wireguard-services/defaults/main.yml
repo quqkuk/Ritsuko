@@ -2,4 +2,3 @@
 wireguard_services_config_folder: '{{ (container_config_folder | mandatory, "wireguard-services") | path_join }}'
 wireguard_services_config_volume_folder: '{{ (container_volumes_folder | mandatory, "wireguard-services") | path_join }}'
 wireguard_services_role: '{{ undef(hint="Role of server in wireguard network (server|client)") }}'
-wireguard_subnet: '{{ undef(hint="Subnet for Wireguard''s network") }}'

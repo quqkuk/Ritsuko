@@ -1,0 +1,2 @@
+---
+wireguard_subnet: '{{ undef(hint="Subnet for Wireguard''s network") }}'

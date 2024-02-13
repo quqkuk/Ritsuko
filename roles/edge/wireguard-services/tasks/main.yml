@@ -16,7 +16,10 @@
   register: wireguard_services_user
 
 - name: Running tasks based on role
-  ansible.builtin.include_tasks: '{{ wireguard_services_role }}.yml'
+  ansible.builtin.include_role:
+    name: edge/wireguard-services
+    tasks_from: '{{ wireguard_services_role }}'
+    defaults_from: '{{ wireguard_services_role }}'
 
 - name: Template Wireguard's Compose file
   ansible.builtin.template:
