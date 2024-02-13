@@ -11,3 +11,6 @@ ayanami
 
 [wireguard_services_clients]
 ayanami
+
+[authentik_clients]
+ayanami

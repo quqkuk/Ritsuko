@@ -1,0 +1,3 @@
+---
+traefik_config_folder: '{{ (container_config_folder | mandatory, "traefik") | path_join }}'
+authentik_server: '{{ undef(hint="Inventory hostname for server that hosts Authentik") }}'

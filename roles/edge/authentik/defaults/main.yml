@@ -1,8 +1,2 @@
 ---
-reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
-authentik_config_folder: '{{ (container_config_folder | mandatory, "authentik") | path_join }}'
-authentik_data_folder: '{{ (container_volumes_folder | mandatory, "authentik") | path_join }}'
-authentik_secret_key: '{{ undef(hint="Secret key for authentik") }}'
-authentik_database_pass: '{{ undef(hint="Password for authentik''s PostgreSQL instance") }}'
-authentik_mail_from: '{{ undef(hint="Email address authentik will send as, should have a correct @domain") }}'
-wireguard_ip: '{{ wireguard_subnet | regex_replace("[0-9]{1,3}/[0-9]{1,2}$", "1") }}'
+authentik_role: '{{ undef(hint="Role of a server in a network (server|client)") }}'

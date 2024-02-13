@@ -1,0 +1,11 @@
+---
+- name: Gather delegate host's facts
+  delegate_to: '{{ authentik_server }}'
+  delegate_facts: true
+  ansible.builtin.setup:
+
+- name: Templating authentik's Compose
+  become: true
+  ansible.builtin.template:
+    src: authentik.yml
+    dest: '{{ (traefik_config_folder, "configs", "authentik.yml") | path_join }}'

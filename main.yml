@@ -120,6 +120,10 @@
       tags:
         - fix
         - firewalld
+    - role: edge/authentik
+      tags:
+        - auth
+        - authentik
 
 - name: Configuring DNS for Migadu
   hosts: localhost

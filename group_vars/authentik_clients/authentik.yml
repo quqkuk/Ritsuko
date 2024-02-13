@@ -1,0 +1,3 @@
+---
+authentik_role: client
+authentik_server: magisystem
