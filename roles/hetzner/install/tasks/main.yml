@@ -124,7 +124,7 @@
         swap_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_swap_partition] }}'
         data_partition_details: '{{ ansible_facts.devices[hetzner_install_installation_drive].partitions[hetzner_install_data_partition] }}'
       ansible.builtin.template:
-        src: combustion_script.j2
+        src: combustion_script.sh
         dest: /mnt/config/combustion/script
         mode: 0744
 

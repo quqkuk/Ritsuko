@@ -20,3 +20,5 @@
       - gateway: '{{ reverse_proxy_network_gateway }}'
         subnet: '{{ reverse_proxy_network_subnet }}'
     state: present
+  notify:
+    - Add internal networks in firewalld

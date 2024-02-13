@@ -2,3 +2,4 @@
 reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
 authentik_service_provider: '{{ undef(hint="Traefik provider that provides the authentik service") }}'
 rssbridge_config_folder: '{{ (container_config_folder | mandatory, "rssbridge") | path_join }}'
+authentik_role: '{{ undef(hint="Role of a server in a network (server|client)") }}'

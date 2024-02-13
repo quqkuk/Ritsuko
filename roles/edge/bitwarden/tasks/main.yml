@@ -32,7 +32,7 @@
 
     - name: Creating config file
       ansible.builtin.template:
-        src: vaultwarden_ldap.toml.j2
+        src: vaultwarden_ldap.toml
         dest: '{{ (bitwarden_config_folder, "vaultwarden_ldap.toml") | path_join }}'
         mode: 0500
         owner: 100001000
@@ -49,6 +49,8 @@
   community.docker.docker_compose_v2:
     project_src: '{{ bitwarden_config_folder }}'
   register: bitwarden_compose_started
+  notify:
+    - Add internal networks in firewalld
 
 - name: Restart LDAP Inviter
   community.docker.docker_compose_v2:

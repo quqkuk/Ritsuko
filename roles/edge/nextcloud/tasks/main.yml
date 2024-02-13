@@ -48,6 +48,8 @@
 - name: Start Nextcloud
   community.docker.docker_compose_v2:
     project_src: '{{ nextcloud_config_folder }}'
+  notify:
+    - Add internal networks in firewalld
 
 - name: Create DNS Records for cloud.magisystem.xyz
   ansible.builtin.import_role:

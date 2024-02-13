@@ -90,10 +90,9 @@
     - role: edge/piped
       tags:
         - piped
-    - role: edge/fix-docker-internal-firewalld
-      tags:
-        - fix
-        - firewalld
+  handlers:
+    - name: Add internal networks in firewalld
+      ansible.builtin.include_tasks: roles/edge/fix-docker-internal-firewalld/tasks/main.yml
 
 - name: Managing containers on Ayanami
   hosts: ayanami
@@ -116,14 +115,13 @@
       tags:
         - reverse-proxy
         - traefik
-    - role: edge/fix-docker-internal-firewalld
-      tags:
-        - fix
-        - firewalld
     - role: edge/authentik
       tags:
         - auth
         - authentik
+  handlers:
+    - name: Add internal networks in firewalld
+      ansible.builtin.include_tasks: roles/edge/fix-docker-internal-firewalld/tasks/main.yml
 
 - name: Configuring DNS for Migadu
   hosts: localhost

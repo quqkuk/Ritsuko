@@ -21,7 +21,7 @@
     
 - name: Template Traefik's Static Config
   ansible.builtin.template:
-    src: traefik.yml.j2
+    src: traefik.yml
     dest: '{{ (traefik_config_folder, "traefik.yml") | path_join }}'
     mode: 0444
   register: traefik_static_config
@@ -54,6 +54,8 @@
   community.docker.docker_compose_v2:
     project_src: '{{ traefik_config_folder }}'
   register: traefik_compose_started
+  notify:
+    - Add internal networks in firewalld
 
 - name: Restart traefik
   community.docker.docker_compose_v2:

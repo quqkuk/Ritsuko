@@ -62,7 +62,7 @@
       ansible.builtin.systemd_service:
         name: smartd.service
         enabled: true
-        state: '{% if ayanami_setup_smartd is changed %}reloaded{% else %}started{% endif %}'
+        state: '{{ (ayanami_setup_smartd is changed) | ternary("reloaded", "started") }}'
 
     - name: Make Docker remap users by default
       ansible.builtin.lineinfile:
@@ -75,7 +75,7 @@
       ansible.builtin.systemd_service:
         name: docker.service
         enabled: true
-        state: '{% if ayanami_setup_sysconfig_docker is changed %}restarted{% else %}started{% endif %}'
+        state: '{{ (ayanami_setup_sysconfig_docker is changed) | ternary("reloaded", "started") }}'
 
     - name: Configure ddclient
       ansible.builtin.blockinfile:
@@ -92,7 +92,7 @@
       ansible.builtin.systemd_service:
         name: ddclient.service
         enabled: true
-        state: '{% if ayanami_setup_ddclient is changed %}restarted{% else %}started{% endif %}'
+        state: '{{ (ayanami_setup_ddclient is changed) | ternary("reloaded", "started") }}'
 
     - name: Allow HTTPS through the firewall
       ansible.posix.firewalld:

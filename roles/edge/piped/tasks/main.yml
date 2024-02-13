@@ -24,7 +24,7 @@
 
     - name: Creating config file
       ansible.builtin.template:
-        src: backend.properties.j2
+        src: backend.properties
         dest: '{{ (piped_config_folder | mandatory, "backend.properties") | path_join }}'
         mode: 0700
         owner: 100001000
@@ -40,6 +40,8 @@
   community.docker.docker_compose_v2:
     project_src: '{{ piped_config_folder }}'
   register: piped_compose_started
+  notify:
+    - Add internal networks in firewalld
 
 - name: Restarting backend
   community.docker.docker_compose_v2:

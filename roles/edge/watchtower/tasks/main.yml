@@ -14,3 +14,5 @@
 - name: Start Watchtower
   community.docker.docker_compose_v2:
     project_src: '{{ watchtower_config_folder }}'
+  notify:
+    - Add internal networks in firewalld
