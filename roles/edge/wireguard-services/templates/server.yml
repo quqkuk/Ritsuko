@@ -17,8 +17,8 @@ services:
       PEERS: ayanami
       PEERDNS: auto
       # Last octet is automatically truncated, always generating a /24 subnet
-      INTERNAL_SUBNET: 192.168.5.0
-      ALLOWEDIPS: 192.168.5.0/24
+      INTERNAL_SUBNET: '{{ wireguard_subnet | regex_replace("/[0-9]{1,2}$", "") }}'
+      ALLOWEDIPS: '{{ wireguard_subnet }}'
       PERSISTENTKEEPALIVE_PEERS: ayanami
       LOG_CONFS: false
       USE_COREDNS: false
