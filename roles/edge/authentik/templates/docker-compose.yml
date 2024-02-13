@@ -61,6 +61,8 @@ services:
     volumes:
       - '{{ (authentik_data_folder, "media") | path_join }}:/media'
       - '{{ (authentik_data_folder, "custom-templates") | path_join }}:/templates'
+    ports:
+      - '{{ wireguard_ip }}:9000:9000'
     labels:
       traefik.enable: 'true'
       traefik.http.routers.authentik.entryPoints: https
