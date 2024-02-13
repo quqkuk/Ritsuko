@@ -1,0 +1,34 @@
+---
+- name: Managing Wireguard Templates
+  become: true
+  block:
+    - name: Ensuring wireguard config templates folder exists
+      ansible.builtin.file:
+        path: '{{ (wireguard_services_config_volume_folder, "templates") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: '{{ wireguard_services_user.uid }}'
+        group: '{{ wireguard_services_user.group }}'
+
+    - name: Copying Wireguard config templates
+      ansible.builtin.copy:
+        src: wireguard-templates/
+        dest: '{{ (wireguard_services_config_volume_folder, "templates") | path_join }}'
+        mode: 0700
+        owner: '{{ wireguard_services_user.uid }}'
+        group: '{{ wireguard_services_user.group }}'
+      register: wireguard_services_config_templates
+
+    - name: Delete wireguard configs
+      ansible.builtin.file:
+        path: '{{ (wireguard_services_config_volume_folder, "wg_confs") | path_join }}'
+        state: absent
+      when: wireguard_services_config_templates is changed
+
+    - name: Ensuring wireguard wg_confs folder exists
+      ansible.builtin.file:
+        path: '{{ (wireguard_services_config_volume_folder, "wg_confs") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: '{{ wireguard_services_user.uid }}'
+        group: '{{ wireguard_services_user.group }}'

@@ -1,0 +1,46 @@
+---
+- name: Ensuring wireguard config folder exists
+  ansible.builtin.file:
+    path: '{{ wireguard_services_config_folder }}'
+    state: directory
+    mode: 0755
+
+- name: Create wireguard user
+  become: true
+  ansible.builtin.user:
+    name: wireguard-services
+    password: '!'
+    password_lock: true
+    system: true
+    create_home: false
+  register: wireguard_services_user
+
+- name: Running tasks based on role
+  ansible.builtin.include_tasks: '{{ wireguard_services_role }}.yml'
+
+- name: Template Wireguard's Compose file
+  ansible.builtin.template:
+    src: '{{ wireguard_services_role }}.yml'
+    dest: '{{ (wireguard_services_config_folder, "compose.yaml") | path_join }}'
+    mode: 0444
+
+- name: Adding Wireguard port to firewalld
+  become: true
+  ansible.posix.firewalld:
+    port: 51820/udp
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: Start Wireguard
+  community.docker.docker_compose_v2:
+    project_src: '{{ wireguard_services_config_folder }}'
+  register: wireguard_services_compose_started
+
+- name: Restart Wireguard
+  community.docker.docker_compose_v2:
+    project_src: '{{ wireguard_services_config_folder }}'
+    state: restarted
+    services:
+      - wireguard
+  when: wireguard_services_config_templates is defined and wireguard_services_config_templates is changed and (wireguard_services_compose_started.actions | selectattr('id', 'contains', 'wireguard') | length) <= 0

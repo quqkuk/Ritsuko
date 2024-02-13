@@ -1,0 +1,31 @@
+---
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    restart: unless-stopped
+    network_mode: host
+    userns_mode: host
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE #optional
+    environment:
+      PUID: '{{ wireguard_services_user.uid }}'
+      PGID: '{{ wireguard_services_user.group }}'
+      TZ: Europe/Rome
+      SERVERURL: auto
+      SERVERPORT: 51820
+      PEERS: ayanami
+      PEERDNS: auto
+      # Last octet is automatically truncated, always generating a /24 subnet
+      INTERNAL_SUBNET: 192.168.5.0
+      ALLOWEDIPS: 192.168.5.0/24
+      PERSISTENTKEEPALIVE_PEERS: ayanami
+      LOG_CONFS: false
+      USE_COREDNS: false
+    volumes:
+      - '{{ wireguard_services_config_volume_folder }}:/config'
+      - /lib/modules:/lib/modules:ro
+    #ports:
+    #  - 51820:51820/udp
+    #sysctls:
+    #  net.ipv4.conf.all.src_valid_mark: 1

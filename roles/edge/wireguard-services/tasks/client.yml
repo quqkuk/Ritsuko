@@ -1,0 +1,36 @@
+---
+# Slurp config from server with a delegated task and apply it to config/wg_configs/wg0.conf
+- name: Move peer config from server to client
+  delegate_to: '{{ wireguard_services_server }}'
+  block:
+    - name: Gathering facts
+      delegate_facts: true
+      ansible.builtin.setup:
+
+    - name: Read peer configuration
+      become: true
+      ansible.builtin.slurp:
+        path: '{{ (hostvars.magisystem.wireguard_services_config_volume_folder |
+                     default((hostvars.magisystem.container_volumes_folder | mandatory, "wireguard-services") | path_join) ,
+                   "peer_"+inventory_hostname,
+                   "peer_"+inventory_hostname+".conf") | path_join }}'
+      register: wireguard_services_peer_config
+
+- name: Writing peer config
+  become: true
+  block:
+    - name: Creating config folder
+      ansible.builtin.file:
+        path: '{{ (wireguard_services_config_folder, "wg_config") | path_join }}'
+        state: directory
+        mode: 0700
+        owner: '{{ wireguard_services_user.uid }}'
+        group: '{{ wireguard_services_user.group }}'
+
+    - name: Writing peer config
+      ansible.builtin.copy:
+        content: '{{ wireguard_services_peer_config.content | b64decode }}'
+        dest: '{{ (wireguard_services_config_folder, "wg_config", "wg0.conf") | path_join }}'
+        mode: 0700
+        owner: '{{ wireguard_services_user.uid }}'
+        group: '{{ wireguard_services_user.group }}'

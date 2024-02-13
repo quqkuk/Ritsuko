@@ -61,6 +61,11 @@
       tags:
         - watchtower
         - updates
+    - role: edge/wireguard-services
+      tags:
+        - wireguard-services
+        - vpn
+        - vpn-services
     - role: edge/traefik
       tags:
         - reverse-proxy
@@ -99,6 +104,11 @@
       tags:
         - watchtower
         - updates
+    - role: edge/wireguard-services
+      tags:
+        - wireguard-services
+        - vpn
+        - vpn-services
     - role: edge/traefik
       tags:
         - reverse-proxy
