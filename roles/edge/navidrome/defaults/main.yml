@@ -1,0 +1,11 @@
+---
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+reverse_proxy_network_subnet: '{{ undef(hint="Subnet of the Reverse Proxy Network") }}'
+navidrome_config_folder: '{{ (container_config_folder | mandatory, "navidrome") | path_join }}'
+navidrome_data_folder: '{{ (container_volumes_folder | mandatory, "navidrome") | path_join }}'
+navidrome_music_folder: '{{ (navidrome_data_folder, "music") | path_join }}'
+navidrome_lastfm_apikey: '{{ undef(hint="Last.fm API Key for Navidrome") }}'
+navidrome_lastfm_secret: '{{ undef(hint="Last.fm API Secret for Navidrome") }}'
+navidrome_spotify_clientid: '{{ undef(hint="Spotify Client ID for Navidrome") }}'
+navidrome_spotify_secret: '{{ undef(hint="Spotify API Secret for Navidrome") }}'
+authentik_role: '{{ undef(hint="Role of a server in a network (server|client)") }}'

@@ -119,6 +119,12 @@
       tags:
         - auth
         - authentik
+    - role: edge/navidrome
+      tags:
+        - navidrome
+        - music
+      vars:
+        navidrome_music_folder: '{{ (storage_pool_folder, "music") | path_join }}'
   handlers:
     - name: Add internal networks in firewalld
       ansible.builtin.include_tasks: roles/edge/fix-docker-internal-firewalld/tasks/main.yml
