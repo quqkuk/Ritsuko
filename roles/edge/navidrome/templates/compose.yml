@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       ND_SESSIONTIMEOUT: 24h
-      ND_TRANSCODINGCACHESIZE: 1 GiB
+      ND_TRANSCODINGCACHESIZE: 5 GiB
       #ND_ENABLETRANSCODINGCONFIG: 'true'
       ND_ENABLESHARING: 'true'
       ND_REVERSEPROXYWHITELIST: '{{ reverse_proxy_network_subnet }}'
