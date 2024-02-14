@@ -31,9 +31,9 @@ services:
       - outside
       - reverse-proxy-network
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Rome
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Rome
     volumes:
       - '{{ (nextcloud_data_folder, "app-config") | path_join }}:/config'
       - '{{ (nextcloud_data_folder, "app-data") | path_join }}:/data'
@@ -48,6 +48,25 @@ services:
       traefik.http.services.nextcloud.loadbalancer.server.port: 443
       traefik.http.services.nextcloud.loadbalancer.serversTransport: nextcloud_transport@file
 
+  collabora:
+    image: collabora/code
+    restart: unless-stopped
+    networks:
+      - outside
+      - reverse-proxy-network
+    environment:
+      TZ: Europe/Rome
+      DONT_GEN_SSL_CERT: yes
+      aliasgroup1: https://cloud.magisystem.xyz:443
+      extra_params: >
+        --o:ssl.enable=false --o:ssl.termination=true --o:admin_console.enable=false
+    labels:
+      com.centurylinklabs.watchtower.monitor-only: 'true'
+      traefik.enable: 'true'
+      traefik.http.routers.collabora.entryPoints: https
+      traefik.http.routers.collabora.rule: Host(`office.magisystem.xyz`) && !PathPrefix(`/cool/getMetrics`)
+      traefik.http.services.collabora.loadbalancer.server.port: 9980
+
 networks:
   default:
     internal: true
@@ -56,25 +75,3 @@ networks:
   reverse-proxy-network:
     name: '{{ reverse_proxy_network }}'
     external: true
-
-##TODO: Run sed -i '/0 => '"'"'cloud.magisystem.xyz'"'"'/a \ \ \ \ 1 => '"'"'cloud'"'"'' config/config.php with blockinfile
-##TODO: change trusted_proxies with blockinfile
-#      MARIADB_DATABASE: nextcloud
-#      MARIADB_USER: nextcloud
-#      MARIADB_PASSWORD: '{{ nextcloud_database_password }}'
-#      MYSQL_HOST: database
-#      REDIS_HOST: redis
-#      #TRUSTED_PROXIES=192.168.0.0/24
-#      #APACHE_DISABLE_REWRITE_IP=1
-#      #OVERWRITEHOST=cloud.magisystem.xyz
-#      OVERWRITEPROTOCOL: https
-#      NEXTCLOUD_TRUSTED_DOMAINS: cloud.magisystem.xyz
-#      TRUSTED_PROXIES: '{{ reverse_proxy_network_subnet }}'
-#      REDIS_HOST_PASSWORD: '{{ nextcloud_redis_password }}'
-#      SMTP_HOST: '{{ mail_server["host"] }}'
-#      SMTP_SECURE: '{{ mail_server["use_ssl"] | bool | ternary("ssl", mail_server["use_tls"] | bool | ternary("tls", "")) }}'
-#      SMTP_PORT: '{{ mail_server["port"] }}'
-#      SMTP_AUTHTYPE: '{{ mail_server["username"] | bool | ternary("LOGIN", "PLAIN") }}'
-#      SMTP_NAME: '{{ mail_server["username"] }}'
-#      SMTP_PASSWORD: '{{ mail_server["password"] }}'
-#      MAIL_FROM_ADDRESS: '{{ nextcloud_mail_from | default("") }}'
