@@ -85,14 +85,14 @@
           protocol=hetzner
           password={{ ddclient_hetzner_token }}
           zone=magisystem.xyz
-          music.magisystem.xyz
+          music.magisystem.xyz,slsk.magisystem.xyz
       register: ayanami_setup_ddclient
 
     - name: Start and enable ddclient
       ansible.builtin.systemd_service:
         name: ddclient.service
         enabled: true
-        state: '{{ (ayanami_setup_ddclient is changed) | ternary("reloaded", "started") }}'
+        state: '{{ (ayanami_setup_ddclient is changed) | ternary("restarted", "started") }}'
 
     - name: Allow HTTPS through the firewall
       ansible.posix.firewalld:

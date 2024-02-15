@@ -21,7 +21,7 @@ services:
       - outside
       - reverse-proxy-network
     volumes:
-      - '{{ navidrome_data_folder }}:/data'
+      - '{{ (navidrome_data_folder, "navidrome") | path_join }}:/data'
       - '{{ navidrome_music_folder }}:/music:ro'
     labels:
       traefik.enable: 'true'
@@ -37,8 +37,58 @@ services:
       traefik.http.routers.navidrome-auth.service: 'authentik@{{ (authentik_role == "server") | ternary("docker", "file") }}'
       traefik.http.middlewares.navidrome-auth.forwardauth.address: https://music.magisystem.xyz/outpost.goauthentik.io/auth/traefik
       traefik.http.middlewares.navidrome-auth.forwardauth.trustForwardHeader: 'true'
-      traefik.http.middlewares.navidrome-auth.forwardauth.authResponseHeaders: X-authentik-username #,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version
+      traefik.http.middlewares.navidrome-auth.forwardauth.authResponseHeaders: X-authentik-username
       traefik.http.services.navidrome.loadbalancer.server.port: '4533'
+
+  slskd:
+    image: slskd/slskd:latest
+    restart: unless-stopped
+    user: 1000:1000
+    environment:
+      SLSKD_SHARED_DIR: /music
+      SLSKD_DOWNLOADS_DIR: /downloads
+      SLSKD_SLSK_USERNAME: '{{ navidrome_slsk_username }}'
+      SLSKD_SLSK_PASSWORD: '{{ navidrome_slsk_password }}'
+      SLSKD_NO_AUTH: true
+      SLSKD_INSTANCE_NAME: '{{ inventory_hostname }}'
+    networks:
+      - outside
+      - reverse-proxy-network
+    ports:
+      - 50300:50300
+    volumes:
+      - '{{ (navidrome_data_folder, "slskd") | path_join }}:/app'
+      - '{{ (navidrome_data_folder, "staging") | path_join }}:/downloads'
+      - '{{ navidrome_music_folder }}:/music:ro'
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.slskd.entryPoints: https
+      traefik.http.routers.slskd.rule: Host(`slsk.magisystem.xyz`)
+      traefik.http.routers.slskd.middlewares: slskd-auth
+      traefik.http.routers.slskd-auth.entryPoints: https
+      traefik.http.routers.slskd-auth.rule: Host(`slsk.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
+      traefik.http.routers.slskd-auth.service: 'authentik@{{ (authentik_role == "server") | ternary("docker", "file") }}'
+      traefik.http.middlewares.slskd-auth.forwardauth.address: https://slsk.magisystem.xyz/outpost.goauthentik.io/auth/traefik
+      traefik.http.middlewares.slskd-auth.forwardauth.trustForwardHeader: 'true'
+      traefik.http.services.slskd.loadbalancer.server.port: 5030
+
+  beets:
+    image: lscr.io/linuxserver/beets:latest
+    restart: unless-stopped
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Rome
+    networks:
+      - outside
+      - reverse-proxy-network
+    ports:
+      - 127.0.0.1:8337:8337
+    volumes:
+      - '{{ (navidrome_data_folder, "staging") | path_join }}:/downloads'
+      - '{{ navidrome_music_folder }}:/music'
+      - '{{ (navidrome_data_folder, "beets") | path_join }}:/config'
+      - ./beets.yml:/config/config.yaml
 
 networks:
   outside:

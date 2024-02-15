@@ -4,28 +4,94 @@
     path: '{{ navidrome_config_folder }}'
     state: directory
 
-- name: Ensuring data folder exists
+- name: Ensuring data folders exist
   become: true
-  ansible.builtin.file:
-    path: '{{ navidrome_data_folder }}'
-    state: directory
-    mode: 0755
-    owner: 100001000
-    group: 100001000
+  block:
+    - name: Create folder for the role
+      ansible.builtin.file:
+        path: '{{ navidrome_data_folder }}'
+        state: directory
+        mode: 0755
+
+    - name: Create navidrome data folder
+      ansible.builtin.file:
+        path: '{{ (navidrome_data_folder, "navidrome") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 100001000
+        group: 100001000
+
+    - name: Create slskd data folder
+      ansible.builtin.file:
+        path: '{{ (navidrome_data_folder, "slskd") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 100001000
+        group: 100001000
+
+    - name: Create staging area folder
+      ansible.builtin.file:
+        path: '{{ (navidrome_data_folder, "staging") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 100001000
+        group: 100001000
+
+    - name: Create beets' folder
+      ansible.builtin.file:
+        path: '{{ (navidrome_data_folder, "beets") | path_join }}'
+        state: directory
+        mode: 0755
+        owner: 100001000
+        group: 100001000
+
+    - name: Templating beets' Config
+      ansible.builtin.template:
+        src: beets.yml
+        dest: '{{ (navidrome_config_folder, "beets.yml") | path_join }}'
+        mode: 0400
+        owner: 100001000
+        group: 100001000
+      register: navidrome_beets_config
 
 - name: Templating Navidrome's Compose
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (navidrome_config_folder, "compose.yml") | path_join }}'
 
+- name: Adding Slskd port to firewalld
+  become: true
+  ansible.posix.firewalld:
+    port: 50300/tcp
+    state: enabled
+    permanent: true
+    immediate: true
+
 - name: Starting Navidrome
   community.docker.docker_compose_v2:
     project_src: '{{ navidrome_config_folder }}'
+  register: navidrome_compose_started
+
+- name: Restart beets
+  community.docker.docker_compose_v2:
+    project_src: '{{ navidrome_config_folder }}'
+    state: restarted
+    services:
+      - beets
+  when: navidrome_beets_config is changed and (navidrome_compose_started.actions | selectattr('id', 'contains', 'beets') | length) <= 0
 
 - name: Create DNS Records for music.magisystem.xyz
   ansible.builtin.import_role:
     name: hetzner/dns
   vars:
     hetzner_dns_record_prefix: music
+    hetzner_dns_record_ipv4: '{{ public_ipv4 | default(omit) }}'
+    hetzner_dns_record_ipv6: '{{ public_ipv6 | default(omit) }}'
+
+- name: Create DNS Records for slsk.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: slsk
     hetzner_dns_record_ipv4: '{{ public_ipv4 | default(omit) }}'
     hetzner_dns_record_ipv6: '{{ public_ipv6 | default(omit) }}'

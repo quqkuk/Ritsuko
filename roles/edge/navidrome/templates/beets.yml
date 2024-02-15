@@ -1,0 +1,92 @@
+plugins: fetchart embedart scrub replaygain chroma web inline duplicates subsonicupdate badfiles
+directory: /music
+library: /config/musiclibrary.blb
+art_filename: cover
+threaded: yes
+original_date: no
+per_disc_numbering: no
+    
+item_fields:
+  multiartist: '"yes" if albumartist != artist else ""'
+
+
+paths:
+  default: $albumartist/$album%aunique{}/$track %if{$multiartist,$artist }- $title
+  singleton: $albumartist/$title
+  comp: $albumartist/$album%aunique{}/$track $artist - $title
+        
+import:
+  write: yes
+  move: yes
+  languages: en jp
+  resume: ask
+  incremental: yes
+  quiet_fallback: skip
+  timid: no
+  log: /config/beet.log
+
+embedart:
+  auto: yes
+  remove_art_file: yes
+
+fetchart:
+  auto: yes
+    
+replaygain:
+  auto: no
+  backend: ffmpeg
+
+chroma:
+  auto: yes
+
+{% if navidrome_acoustid_api_key is defined %}
+acoustid:
+  apikey: '{{ navidrome_acoustid_api_key }}'
+{% endif %}
+
+scrub:
+  auto: yes
+
+badfiles:
+  check_on_import: yes
+
+subsonic:
+  url: https://music.magisystem.xyz:443
+  {%- if navidrome_beets_username is defined +%}
+  user: '{{ navidrome_beets_username }}'
+  {%- endif +%}
+  {%- if navidrome_beets_password is defined +%}
+  pass: '{{ navidrome_beets_password }}'
+  {%- endif +%}
+  auth: token
+
+replace:
+    '^\.': _
+    '[\x00-\x1f]': _
+    '[<>:"\?\*\|]': _
+    '[\xE8-\xEB]': e
+    '[\xEC-\xEF]': i
+    '[\xE2-\xE6]': a
+    '[\xF2-\xF6]': o
+    '[\xF8]': o
+    '\.$': _
+    '\s+$': ''
+
+clutter:
+  - Thumbs.DB
+  - .DS_Store
+  - '*.png'
+  - '*.jpg'
+  - '*.cue'
+  - '*.log'
+  - '*.m3u'
+  - '*.nfo'
+  - '*.sfv'
+  - '*.txt'
+  - '*.url'
+  - thumbs.db
+
+web:
+    host: 0.0.0.0
+    port: 8337
+
