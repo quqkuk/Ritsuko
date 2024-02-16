@@ -112,11 +112,11 @@ services:
 networks:
   default:
     internal: true
-  {% if authentik_ldap_token is defined -%}
+  {%- if authentik_ldap_token is defined +%}
   ldap:
     name: ldap
     internal: true
-  {% endif -%}
+  {%- endif +%}
   outside:
     internal: false
   reverse-proxy-network:
