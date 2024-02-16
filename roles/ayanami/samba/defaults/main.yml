@@ -1,0 +1,2 @@
+---
+storage_pool_folder: '{{ undef(hint="Folder where the storage pool is mounted") }}'
