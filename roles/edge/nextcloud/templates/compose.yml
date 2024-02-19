@@ -34,6 +34,8 @@ services:
       PUID: 1000
       PGID: 1000
       TZ: Europe/Rome
+      DOCKER_MODS: linuxserver/mods:universal-stdout-logs
+      LOGS_TO_STDOUT: /data/nextcloud.log
     volumes:
       - '{{ (nextcloud_data_folder, "app-config") | path_join }}:/config'
       - '{{ (nextcloud_data_folder, "app-data") | path_join }}:/data'
