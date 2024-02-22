@@ -15,6 +15,8 @@
   ansible.builtin.file:
     path: '{{ (traefik_volumes_folder, "acme.json") | path_join }}'
     state: touch
+    access_time: preserve
+    modification_time: preserve
     mode: 0600
     owner: 100000000
     group: 100000000
