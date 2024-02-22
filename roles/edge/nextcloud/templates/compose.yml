@@ -8,6 +8,7 @@ services:
 
   database:
     image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW --character-set-server=utf8
     restart: unless-stopped
     networks:
       - default
