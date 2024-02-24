@@ -1,4 +1,4 @@
-plugins: fetchart embedart scrub replaygain chroma inline duplicates subsonicupdate badfiles
+plugins: fetchart embedart scrub replaygain chroma inline duplicates subsonicupdate badfiles web
 directory: /music
 library: /config/musiclibrary.blb
 art_filename: cover
