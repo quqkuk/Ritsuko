@@ -51,6 +51,7 @@ services:
       SLSKD_SLSK_PASSWORD: '{{ navidrome_slsk_password }}'
       SLSKD_NO_AUTH: true
       SLSKD_INSTANCE_NAME: '{{ inventory_hostname }}'
+      SLSKD_UPLOAD_SPEED_LIMIT: {{ 1 * 1024 * 1024 }}
     networks:
       - outside
       - reverse-proxy-network
