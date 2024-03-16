@@ -1,4 +1,4 @@
-plugins: fetchart embedart scrub replaygain chroma inline duplicates subsonicupdate badfiles web
+plugins: fetchart embedart scrub replaygain chroma inline duplicates {% if navidrome_beets_username is defined and navidrome_beets_password is defined %}subsonicupdate{% endif %} badfiles web
 directory: /music
 library: /config/musiclibrary.blb
 art_filename: cover
@@ -47,15 +47,13 @@ acoustid:
 scrub:
   auto: yes
 
+{% if navidrome_beets_username is defined and navidrome_beets_password is defined %}
 subsonic:
   url: https://music.magisystem.xyz:443
-  {%- if navidrome_beets_username is defined +%}
   user: '{{ navidrome_beets_username }}'
-  {%- endif +%}
-  {%- if navidrome_beets_password is defined +%}
   pass: '{{ navidrome_beets_password }}'
-  {%- endif +%}
   auth: token
+{% endif %}
 
 replace:
     '^\.': _
