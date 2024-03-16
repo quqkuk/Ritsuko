@@ -47,9 +47,6 @@ acoustid:
 scrub:
   auto: yes
 
-badfiles:
-  check_on_import: yes
-
 subsonic:
   url: https://music.magisystem.xyz:443
   {%- if navidrome_beets_username is defined +%}
