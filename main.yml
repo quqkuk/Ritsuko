@@ -91,7 +91,8 @@
       tags:
         - piped
   handlers:
-    - name: Add internal networks in firewalld
+    - &firewalld-handler
+      name: Add internal networks in firewalld
       ansible.builtin.include_tasks: roles/edge/fix-docker-internal-firewalld/tasks/main.yml
 
 - name: Managing containers on Ayanami
@@ -126,8 +127,7 @@
       vars:
         navidrome_music_folder: '{{ (storage_pool_folder, "music") | path_join }}'
   handlers:
-    - name: Add internal networks in firewalld
-      ansible.builtin.include_tasks: roles/edge/fix-docker-internal-firewalld/tasks/main.yml
+    - *firewalld-handler
 
 - name: Configuring DNS for Migadu
   hosts: localhost
