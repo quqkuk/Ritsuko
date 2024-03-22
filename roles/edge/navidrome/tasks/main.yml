@@ -80,6 +80,12 @@
       - beets
   when: navidrome_beets_config is changed and (navidrome_compose_started.actions | selectattr('id', 'contains', 'beets') | length) <= 0
 
+- name: Run beets import every 10 minutes
+  ansible.builtin.cron:
+    name: Run beets import
+    minute: '*/10'
+    job: 'docker compose exec -u abc beets beet import -q /downloads'
+
 - name: Create DNS Records for music.magisystem.xyz
   ansible.builtin.import_role:
     name: hetzner/dns
