@@ -34,7 +34,7 @@ services:
       traefik.http.routers.navidrome-api-no-auth.service: navidrome
       traefik.http.routers.navidrome-auth.entryPoints: https
       traefik.http.routers.navidrome-auth.rule: Host(`music.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
-      traefik.http.routers.navidrome-auth.service: 'authentik@{{ (authentik_role == "server") | ternary("docker", "file") }}'
+      traefik.http.routers.navidrome-auth.service: 'authentik@{{ authentik_provider }}'
       traefik.http.middlewares.navidrome-auth.forwardauth.address: https://music.magisystem.xyz/outpost.goauthentik.io/auth/traefik
       traefik.http.middlewares.navidrome-auth.forwardauth.trustForwardHeader: 'true'
       traefik.http.middlewares.navidrome-auth.forwardauth.authResponseHeaders: X-authentik-username
@@ -68,7 +68,7 @@ services:
       traefik.http.routers.slskd.middlewares: slskd-auth
       traefik.http.routers.slskd-auth.entryPoints: https
       traefik.http.routers.slskd-auth.rule: Host(`slsk.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
-      traefik.http.routers.slskd-auth.service: 'authentik@{{ (authentik_role == "server") | ternary("docker", "file") }}'
+      traefik.http.routers.slskd-auth.service: 'authentik@{{ authentik_provider }}'
       traefik.http.middlewares.slskd-auth.forwardauth.address: https://slsk.magisystem.xyz/outpost.goauthentik.io/auth/traefik
       traefik.http.middlewares.slskd-auth.forwardauth.trustForwardHeader: 'true'
       traefik.http.services.slskd.loadbalancer.server.port: 5030
