@@ -84,7 +84,7 @@
   ansible.builtin.cron:
     name: Run beets import
     minute: '*/10'
-    job: 'docker compose exec -u abc beets beet import -q /downloads'
+    job: 'docker compose --project-directory ''{{ navidrome_config_folder }}'' exec -du abc beets beet import -q /downloads'
 
 - name: Create DNS Records for music.magisystem.xyz
   ansible.builtin.import_role:
