@@ -29,14 +29,6 @@
         owner: 100001000
         group: 100001000
 
-    - name: Create staging area folder
-      ansible.builtin.file:
-        path: '{{ (navidrome_data_folder, "staging") | path_join }}'
-        state: directory
-        mode: 0755
-        owner: 100001000
-        group: 100001000
-
     - name: Create beets' folder
       ansible.builtin.file:
         path: '{{ (navidrome_data_folder, "beets") | path_join }}'

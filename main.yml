@@ -99,19 +99,11 @@
   hosts: ayanami
   roles:
     - role: ayanami/setup
-    #- role: ayanami/samba
-    #  tags:
-    #    - samba
     - role: edge/setup
     - role: edge/watchtower
       tags:
         - watchtower
         - updates
-    - role: edge/wireguard-services
-      tags:
-        - wireguard-services
-        - vpn
-        - vpn-services
     - role: edge/traefik
       tags:
         - reverse-proxy
@@ -126,6 +118,7 @@
         - music
       vars:
         navidrome_music_folder: '{{ (storage_pool_folder, "music") | path_join }}'
+        navidrome_music_ingest_folder: '{{ (storage_pool_folder, "music-ingest") | path_join }}'
   handlers:
     - *firewalld-handler
 

@@ -59,7 +59,7 @@ services:
       - 50300:50300
     volumes:
       - '{{ (navidrome_data_folder, "slskd") | path_join }}:/app'
-      - '{{ (navidrome_data_folder, "staging") | path_join }}:/downloads'
+      - '{{ navidrome_music_ingest_folder }}:/downloads'
       - '{{ navidrome_music_folder }}:/music:ro'
     labels:
       traefik.enable: 'true'
@@ -84,7 +84,7 @@ services:
       - outside
       - reverse-proxy-network
     volumes:
-      - '{{ (navidrome_data_folder, "staging") | path_join }}:/downloads'
+      - '{{ navidrome_music_ingest_folder }}:/downloads'
       - '{{ navidrome_music_folder }}:/music'
       - '{{ (navidrome_data_folder, "beets") | path_join }}:/config'
       - ./beets.yml:/config/config.yaml

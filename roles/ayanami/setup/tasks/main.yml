@@ -1,68 +1,17 @@
 - become: true
   block:
-    - name: Add filesystems repo from Open Build Service
-      community.general.zypper_repository:
-        auto_import_keys: false
-        repo: 'https://download.opensuse.org/repositories/filesystems/{{ ansible_facts.lsb.release }}/filesystems.repo'
-
     - name: Add network repo from Open Build Service
       community.general.zypper_repository:
         auto_import_keys: false
-        repo: 'https://download.opensuse.org/repositories/network/{{ ansible_facts.lsb.release }}/network.repo'
+        repo: 'https://download.opensuse.org/repositories/network/openSUSE_Tumbleweed/network.repo'
 
     - name: Install packages
       community.general.zypper:
         name:
-          - hdparm
-          - smartmontools
           - docker
-          - zfs
-          - zfs-kmp-default
-          - zfs-ueficert
+          - docker-compose
           - ddclient
-
-    - name: Set ZED Email Address to UnifiedPush endpoint
-      ansible.builtin.lineinfile:
-        path: /etc/zfs/zed.d/zed.rc
-        search_string: 'ZED_EMAIL_ADDR="'
-        line: 'ZED_EMAIL_ADDR="{{ zed_up_endpoint }}"'
-
-    - name: Point ZED to curl to send "emails"
-      ansible.builtin.lineinfile:
-        path: /etc/zfs/zed.d/zed.rc
-        search_string: 'ZED_EMAIL_PROG="'
-        line: 'ZED_EMAIL_PROG="curl"'
-
-    - name: Set options to send ZED notifications with curl
-      ansible.builtin.lineinfile:
-        path: /etc/zfs/zed.d/zed.rc
-        search_string: 'ZED_EMAIL_OPTS="'
-        line: 'ZED_EMAIL_OPTS="-X POST --data @- ''@ADDRESS@''"'
-
-    - name: Send smartd notification script
-      ansible.builtin.copy:
-        content: !unsafe |
-          #!/bin/bash
-          curl -X POST --data @- "$SMARTD_ADDRESS"
-        dest: /usr/local/bin/send_smartd_to_up.sh
-        owner: root
-        group: root
-        mode: 0755
-
-    - name: Send SMART notifications through UnifiedPush
-      ansible.builtin.lineinfile:
-        path: /etc/smartd.conf
-        backrefs: true
-        #TODO: Improve regex to capture all but -m and -M exec
-        regexp: '^#?DEFAULT (?!.*-m {{ smartd_up_endpoint }} -M exec /usr/local/bin/send_smartd_to_up\.sh)(.*)$'
-        line: 'DEFAULT \1 -a -o on -S on -W 2,35,40 -m {{ smartd_up_endpoint }} -M exec /usr/local/bin/send_smartd_to_up.sh -M diminishing'
-      register: ayanami_setup_smartd
-
-    - name: Start and enable smartd
-      ansible.builtin.systemd_service:
-        name: smartd.service
-        enabled: true
-        state: '{{ (ayanami_setup_smartd is changed) | ternary("reloaded", "started") }}'
+          - python311-requests
 
     - name: Make Docker remap users by default
       ansible.builtin.lineinfile:
