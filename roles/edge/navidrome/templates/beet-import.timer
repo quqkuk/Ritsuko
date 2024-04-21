@@ -1,0 +1,10 @@
+[Unit]
+Description = beet import timer
+
+[Timer]
+OnActiveSec = 0
+OnUnitInactiveSec = 10m
+Unit = beet-import.service
+
+[Install]
+WantedBy = timers.target

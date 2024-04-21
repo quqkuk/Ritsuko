@@ -1,0 +1,8 @@
+[Unit]
+Description = beet import
+
+[Service]
+Type = exec
+#Group = docker
+WorkingDirectory = {{ navidrome_config_folder }}
+ExecStart = docker compose exec -u abc beets beet import -q /downloads
