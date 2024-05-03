@@ -30,7 +30,7 @@ services:
       traefik.http.routers.navidrome.middlewares: navidrome-auth
       traefik.http.routers.navidrome.service: navidrome
       traefik.http.routers.navidrome-api-no-auth.entryPoints: https
-      traefik.http.routers.navidrome-api-no-auth.rule: Host(`music.magisystem.xyz`) && PathPrefix(`/rest`, `/share`)
+      traefik.http.routers.navidrome-api-no-auth.rule: Host(`music.magisystem.xyz`) && (PathPrefix(`/rest`) || PathPrefix(`/share`))
       traefik.http.routers.navidrome-api-no-auth.service: navidrome
       traefik.http.routers.navidrome-auth.entryPoints: https
       traefik.http.routers.navidrome-auth.rule: Host(`music.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
