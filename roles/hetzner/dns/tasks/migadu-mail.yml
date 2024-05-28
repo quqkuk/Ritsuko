@@ -44,8 +44,8 @@
         prefix: '{{ item }}'
         type: MX
         value:
-          - 10 aspmx1.migadu.com
-          - 20 aspmx2.migadu.com
+          - 10 aspmx1.migadu.com.
+          - 20 aspmx2.migadu.com.
       with_ansible.builtin.list: ["@", "*"]
     - name: Create DKIM and ARC Key Records
       community.dns.hetzner_dns_record_set:
