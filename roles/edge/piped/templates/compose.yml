@@ -1,65 +1,60 @@
----
 version: "3"
 
 services:
     frontend:
         image: 1337kavin/piped-frontend:latest
         restart: unless-stopped
-        entrypoint: ash -c 'sed -i s/pipedapi.kavin.rocks/pipedapi.magisystem.xyz/g /usr/share/nginx/html/assets/* && /docker-entrypoint.sh && nginx -g "daemon off;"'
+        networks:
+          - default
         depends_on:
             - backend
-        networks:
-          - outside
-          - reverse-proxy-network
-        labels:
-          traefik.enable: 'true'
-          traefik.http.routers.piped-frontend.entryPoints: https
-          traefik.http.routers.piped-frontend.rule: Host(`piped.magisystem.xyz`)
-          traefik.http.routers.piped-frontend.middlewares: piped-headers
-          traefik.http.services.piped-frontend.loadbalancer.server.port: '80'
+        entrypoint: ash -c 'sed -i s/pipedapi.kavin.rocks/pipedapi.magisystem.xyz/g /usr/share/nginx/html/assets/* && /docker-entrypoint.sh && nginx -g "daemon off;"'
 
     proxy:
         image: 1337kavin/piped-proxy:latest
         restart: unless-stopped
         networks:
+          - default
           - outside
-          - reverse-proxy-network
-        labels:
-          traefik.enable: 'true'
-          traefik.http.routers.piped-proxy-not-cache.entryPoints: https
-          traefik.http.routers.piped-proxy-not-cache.rule: >
-            Host(`pipedproxy.magisystem.xyz`) && (PathPrefix(`/videoplayback`) || PathPrefix(`/api/v4`) || PathPrefix(`/api/manifest`))
-          traefik.http.routers.piped-proxy-not-cache.middlewares: piped-headers,piped-proxy-no-cache-headers
-          traefik.http.routers.piped-proxy-not-cache.service: piped-proxy
-          traefik.http.routers.piped-proxy-cached.entryPoints: https
-          traefik.http.routers.piped-proxy-cached.rule: Host(`pipedproxy.magisystem.xyz`)
-          traefik.http.routers.piped-proxy-cached.middlewares: piped-headers,piped-proxy-cache-headers
-          traefik.http.routers.piped-proxy-cached.service: piped-proxy
-          traefik.http.middlewares.piped-headers.headers.stsSeconds: '31536000'
-          traefik.http.middlewares.piped-headers.headers.permissionsPolicy: interest-cohort=()
-          traefik.http.middlewares.piped-headers.headers.referrerPolicy: no-referrer
-          traefik.http.middlewares.piped-headers.headers.customresponseheaders.X-Robots-Tag: noindex
-          traefik.http.middlewares.piped-proxy-cache-headers.headers.customresponseheaders.Cache-Control: public, max-age=604800
-          traefik.http.middlewares.piped-proxy-no-cache-headers.headers.customresponseheaders.Cache-Control: private, always
-          traefik.http.services.piped-proxy.loadbalancer.server.port: '8080'
+        environment:
+            - UDS=1
+        volumes:
+            - piped-proxy:/app/socket
 
     backend:
         image: 1337kavin/piped:latest
         restart: unless-stopped
-        depends_on:
-            - database
         networks:
           - default
           - outside
-          - reverse-proxy-network
         volumes:
             - ./backend.properties:/app/config.properties:ro
+        depends_on:
+            - database
+
+    nginx:
+        image: nginx:mainline-alpine
+        restart: unless-stopped
+        networks:
+          - default
+          - reverse-proxy-network
+        volumes:
+            - ./nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./config:/etc/nginx/conf.d:ro
+            - ./ytproxy.conf:/etc/nginx/snippets/ytproxy.conf:ro
+            #- ./config/pipedapi.conf:/etc/nginx/conf.d/pipedapi.conf:ro
+            #- ./config/pipedproxy.conf:/etc/nginx/conf.d/pipedproxy.conf:ro
+            #- ./config/pipedfrontend.conf:/etc/nginx/conf.d/pipedfrontend.conf:ro
+            - piped-proxy:/var/run/ytproxy
+        depends_on:
+            - backend
+            - proxy
+            - frontend
         labels:
           traefik.enable: 'true'
-          traefik.http.routers.piped-backend.entryPoints: https
-          traefik.http.routers.piped-backend.rule: Host(`pipedapi.magisystem.xyz`)
-          traefik.http.routers.piped-backend.middlewares: piped-headers
-          traefik.http.services.piped-backend.loadbalancer.server.port: '8080'
+          traefik.http.routers.piped.entrypoints: https
+          traefik.http.routers.piped.rule: Host(`piped.magisystem.xyz`) || Host(`pipedapi.magisystem.xyz`) || Host(`pipedproxy.magisystem.xyz`)
+          traefik.http.services.piped.loadbalancer.server.port: '80'
 
     database:
         image: postgres:15-alpine
@@ -73,11 +68,14 @@ services:
         networks:
           - default
         environment:
-            POSTGRES_DB: piped
-            POSTGRES_USER: piped
-            POSTGRES_PASSWORD: '{{ piped_database_pass }}'
+          POSTGRES_DB: piped
+          POSTGRES_USER: piped
+          POSTGRES_PASSWORD: '{{ piped_database_pass }}'
         volumes:
             - '{{ (piped_data_folder, "data") | path_join }}:/var/lib/postgresql/data'
+
+volumes:
+    piped-proxy: null
 
 networks:
   default:

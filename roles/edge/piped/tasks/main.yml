@@ -22,14 +22,28 @@
         owner: 100000070
         group: 100000070
 
-    - name: Creating config file
+    - name: Creating backend config file
       ansible.builtin.template:
         src: backend.properties
         dest: '{{ (piped_config_folder | mandatory, "backend.properties") | path_join }}'
-        mode: 0700
+        mode: 0400
         owner: 100001000
         group: 100001000
       register: piped_backend_config_template
+
+    - name: Uploading nginx config files
+      ansible.builtin.copy:
+        src: '{{ item }}'
+        dest: '{{ piped_config_folder | mandatory }}'
+        mode: 0400
+        directory_mode: 0500
+        owner: 100001000
+        group: 100001000
+      with_ansible.builtin.list:
+        - config
+        - nginx.conf
+        - ytproxy.conf
+      register: piped_nginx_config_template
 
 - name: Templating compose file
   ansible.builtin.template:
@@ -50,6 +64,14 @@
     services:
       - backend
   when: piped_backend_config_template is changed and (piped_compose_started.actions | selectattr('id', 'contains', 'backend') | length) <= 0
+
+- name: Restarting nginx
+  community.docker.docker_compose_v2:
+    project_src: '{{ piped_config_folder }}'
+    state: restarted
+    services:
+      - nginx
+  when: piped_nginx_config_template is changed and (piped_compose_started.actions | selectattr('id', 'contains', 'nginx') | length) <= 0
 
 - name: Create DNS Records for pipedproxy.magisystem.xyz
   ansible.builtin.import_role:
