@@ -72,26 +72,22 @@
       - beets
   when: navidrome_beets_config is changed and (navidrome_compose_started.actions | selectattr('id', 'contains', 'beets') | length) <= 0
 
-- name: Ensure systemd user unit folder exists
-  ansible.builtin.file:
-    path: '{{ (ansible_facts.env.HOME, ".config/systemd/user") | path_join }}'
-    state: directory
+- become: true
+  block:
+    - name: Template beets import systemd timer
+      ansible.builtin.template:
+        src: 'beet-import.{{ item }}'
+        dest: /etc/systemd/system
+      with_list:
+        - timer
+        - service
 
-- name: Template beets import systemd timer
-  ansible.builtin.template:
-    src: 'beet-import.{{ item }}'
-    dest: '{{ (ansible_facts.env.HOME, ".config/systemd/user", "beet-import."+item) | path_join }}'
-  with_list:
-    - timer
-    - service
-
-- name: Enable beets import systemd timer
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    scope: user
-    name: beet-import.timer
-    enabled: true
-    state: started
+    - name: Enable beets import systemd timer
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: beet-import.timer
+        enabled: true
+        state: started
 
 - name: Create DNS Records for music.magisystem.xyz
   ansible.builtin.import_role:
