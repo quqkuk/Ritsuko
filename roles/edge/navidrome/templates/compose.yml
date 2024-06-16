@@ -65,12 +65,12 @@ services:
     labels:
       traefik.enable: 'true'
       traefik.http.routers.slskd.entryPoints: https
-      traefik.http.routers.slskd.rule: Host(`slsk.magisystem.xyz`)
+      traefik.http.routers.slskd.rule: Host(`music.slsk.magisystem.xyz`)
       traefik.http.routers.slskd.middlewares: slskd-auth
       traefik.http.routers.slskd-auth.entryPoints: https
-      traefik.http.routers.slskd-auth.rule: Host(`slsk.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
+      traefik.http.routers.slskd-auth.rule: Host(`music.slsk.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
       traefik.http.routers.slskd-auth.service: 'authentik@{{ authentik_provider }}'
-      traefik.http.middlewares.slskd-auth.forwardauth.address: https://slsk.magisystem.xyz/outpost.goauthentik.io/auth/traefik
+      traefik.http.middlewares.slskd-auth.forwardauth.address: https://music.slsk.magisystem.xyz/outpost.goauthentik.io/auth/traefik
       traefik.http.middlewares.slskd-auth.forwardauth.trustForwardHeader: 'true'
       traefik.http.services.slskd.loadbalancer.server.port: 5030
 

@@ -95,8 +95,8 @@
   vars:
     hetzner_dns_record_prefix: music
 
-- name: Create DNS Records for slsk.magisystem.xyz
+- name: Create DNS Records for music.slsk.magisystem.xyz
   ansible.builtin.import_role:
     name: hetzner/dns
   vars:
-    hetzner_dns_record_prefix: slsk
+    hetzner_dns_record_prefix: music.slsk
