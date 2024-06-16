@@ -21,7 +21,7 @@ services:
       traefik.http.routers.grocy.rule: Host(`grocy.magisystem.xyz`)
       traefik.http.routers.grocy.middlewares: grocy-authentik
       traefik.http.routers.grocy-api.entryPoints: https
-      traefik.http.routers.grocy-api.rule: Host(`grocy.magisystem.xyz`) && PathPrefix(`/api`)
+      traefik.http.routers.grocy-api.rule: Host(`grocy.magisystem.xyz`) && PathPrefix(`/api`) && HeaderRegexp(`GROCY-API-KEY`, `^.*$`)
       traefik.http.routers.grocy-api.service: grocy
       traefik.http.routers.grocy-authentik.entryPoints: https
       traefik.http.routers.grocy-authentik.rule: Host(`grocy.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
