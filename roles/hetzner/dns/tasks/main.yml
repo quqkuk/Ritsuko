@@ -15,7 +15,7 @@
     - type: CAA
       value: 128 issue "letsencrypt.org"
     - type: A
-      value: '{{ hetzner_dns_record_ipv4 | default(omit) }}'
+      value: '{{ hetzner_dns_record_ipv4 }}'
     #TODO: Enable Docker's IPv6 support
     #- type: AAAA
     #  value: '{{ hetzner_dns_record_ipv6 | default(omit) }}'
