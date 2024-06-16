@@ -3,7 +3,7 @@
   ansible.builtin.file:
     path: '{{ rssbridge_config_folder }}'
     state: directory
-    mode: 0744
+    mode: 0755
 
 - name: Configuring RSS-Bridge
   become: true
@@ -12,7 +12,7 @@
       ansible.builtin.file:
         dest: '{{ (rssbridge_config_folder | mandatory, "config") | path_join }}'
         state: directory
-        mode: 0744
+        mode: 0755
         owner: 100001000
         group: 100001000
 

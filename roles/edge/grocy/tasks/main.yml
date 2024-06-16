@@ -3,7 +3,16 @@
   ansible.builtin.file:
     path: '{{ grocy_config_folder }}'
     state: directory
-    mode: 0744
+    mode: 0755
+
+- name: Ensuring container data folder exists
+  become: true
+  ansible.builtin.file:
+    path: '{{ grocy_data_folder }}'
+    state: directory
+    owner: 100001000
+    group: 100001000
+    mode: 0755
 
 - name: Templating compose file
   ansible.builtin.template:
