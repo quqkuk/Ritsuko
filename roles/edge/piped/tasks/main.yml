@@ -73,26 +73,14 @@
       - nginx
   when: piped_nginx_config_template is changed and (piped_compose_started.actions | selectattr('id', 'contains', 'nginx') | length) <= 0
 
-- name: Create DNS Records for pipedproxy.magisystem.xyz
-  ansible.builtin.import_role:
+- name: Create DNS Records for piped{,api,proxy}.magisystem.xyz
+  ansible.builtin.include_role:
     name: hetzner/dns
   vars:
-    hetzner_dns_record_prefix: pipedproxy
-    hetzner_dns_record_ipv4: '{{ public_ipv4 | default(omit) }}'
-    hetzner_dns_record_ipv6: '{{ public_ipv6 | default(omit) }}'
-
-- name: Create DNS Records for pipedapi.magisystem.xyz
-  ansible.builtin.import_role:
-    name: hetzner/dns
-  vars:
-    hetzner_dns_record_prefix: pipedapi
-    hetzner_dns_record_ipv4: '{{ public_ipv4 | default(omit) }}'
-    hetzner_dns_record_ipv6: '{{ public_ipv6 | default(omit) }}'
-
-- name: Create DNS Records for piped.magisystem.xyz
-  ansible.builtin.import_role:
-    name: hetzner/dns
-  vars:
-    hetzner_dns_record_prefix: piped
-    hetzner_dns_record_ipv4: '{{ public_ipv4 | default(omit) }}'
-    hetzner_dns_record_ipv6: '{{ public_ipv6 | default(omit) }}'
+    hetzner_dns_record_prefix: '{{ prefix }}'
+  loop_control:
+    loop_var: prefix
+  with_list:
+    - piped
+    - pipedapi
+    - pipedproxy
