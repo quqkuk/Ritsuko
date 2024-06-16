@@ -1,0 +1,36 @@
+---
+services:
+  server:
+    hostname: '{{ inventory_hostname }}'
+    image: lscr.io/linuxserver/grocy
+    restart: unless-stopped
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Rome
+      GROCY_CALENDAR_FIRST_DAY_OF_WEEK: 1
+      GROCY_CURRENCY: EUR
+      GROCY_AUTH_CLASS: Grocy\Middleware\ReverseProxyAuthMiddleware
+      GROCY_REVERSE_PROXY_AUTH_HEADER: X-authentik-username
+    networks:
+      - outside
+      - reverse-proxy-network
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.grocy.entryPoints: https
+      traefik.http.routers.grocy.rule: Host(`grocy.magisystem.xyz`)
+      traefik.http.routers.grocy.middlewares: grocy-authentik
+      traefik.http.routers.grocy-authentik.entryPoints: https
+      traefik.http.routers.grocy-authentik.rule: Host(`grocy.magisystem.xyz`) && PathPrefix(`/outpost.goauthentik.io/`)
+      traefik.http.routers.grocy-authentik.service: 'authentik@{{ authentik_provider }}'
+      traefik.http.middlewares.grocy-authentik.forwardauth.address: https://grocy.magisystem.xyz/outpost.goauthentik.io/auth/traefik
+      traefik.http.middlewares.grocy-authentik.forwardauth.trustForwardHeader: 'true'
+      traefik.http.middlewares.grocy-authentik.forwardauth.authResponseHeaders: X-authentik-username
+      traefik.http.services.grocy.loadbalancer.server.port: '80'
+
+networks:
+  outside:
+    internal: false
+  reverse-proxy-network:
+    name: '{{ reverse_proxy_network }}'
+    external: true

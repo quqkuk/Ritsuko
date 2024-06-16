@@ -1,0 +1,31 @@
+---
+- name: Ensuring container config folder exists
+  ansible.builtin.file:
+    path: '{{ grocy_config_folder }}'
+    state: directory
+    mode: 0744
+
+- name: Templating compose file
+  ansible.builtin.template:
+    src: compose.yml
+    dest: '{{ (grocy_config_folder | mandatory, "compose.yml") | path_join }}'
+    mode: 0744
+
+- name: Starting Grocy
+  community.docker.docker_compose_v2:
+    project_src: '{{ grocy_config_folder }}'
+  register: grocy_compose_started
+
+#- name: Restartng Grocy
+#  community.docker.docker_compose_v2:
+#    project_src: '{{ grocy_config_folder }}'
+#    services:
+#      - server
+#    state: restarted
+#  when: grocy_config is changed and (grocy_compose_started.actions | selectattr('id', 'contains', 'server') | length) <= 0
+
+- name: Create DNS Records for grocy.magisystem.xyz
+  ansible.builtin.import_role:
+    name: hetzner/dns
+  vars:
+    hetzner_dns_record_prefix: grocy

@@ -1,0 +1,5 @@
+---
+reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
+authentik_role: '{{ undef(hint="Role of a server in a network (server|client)") }}'
+grocy_config_folder: '{{ (container_config_folder | mandatory, "grocy") | path_join }}'
+grocy_data_folder: '{{ (container_volumes_folder | mandatory, "grocy") | path_join }}'

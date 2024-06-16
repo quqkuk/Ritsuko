@@ -119,6 +119,9 @@
       vars:
         navidrome_music_folder: '{{ (storage_pool_folder, "music") | path_join }}'
         navidrome_music_ingest_folder: '{{ (storage_pool_folder, "music-ingest") | path_join }}'
+    - role: edge/grocy
+      tags:
+        - grocy
   handlers:
     - *firewalld-handler
 

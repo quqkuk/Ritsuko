@@ -34,7 +34,7 @@
           protocol=hetzner
           password={{ ddclient_hetzner_token }}
           zone=magisystem.xyz
-          music.magisystem.xyz,music.slsk.magisystem.xyz
+          music.magisystem.xyz,music.slsk.magisystem.xyz,grocy.magisystem.xyz
       register: ayanami_setup_ddclient
 
     - name: Start and enable ddclient
