@@ -1,7 +1,6 @@
 ---
 services:
-  server:
-    hostname: '{{ inventory_hostname }}'
+  grocy:
     image: lscr.io/linuxserver/grocy
     restart: unless-stopped
     environment:

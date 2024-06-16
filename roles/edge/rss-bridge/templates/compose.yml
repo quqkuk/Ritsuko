@@ -1,7 +1,6 @@
 ---
 services:
-  server:
-    hostname: '{{ inventory_hostname }}'
+  rssbridge:
     image: rssbridge/rss-bridge
     restart: unless-stopped
     networks:
