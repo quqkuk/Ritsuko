@@ -43,7 +43,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (bitwarden_config_folder, "compose.yml") | path_join }}'
-    mode: 0700
+    mode: 0500
 
 - name: Start Bitwarden
   community.docker.docker_compose_v2:

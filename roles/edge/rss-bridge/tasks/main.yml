@@ -29,7 +29,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (rssbridge_config_folder | mandatory, "compose.yml") | path_join }}'
-    mode: 0744
+    mode: 0544
 
 - name: Starting RSS-Bridge
   community.docker.docker_compose_v2:

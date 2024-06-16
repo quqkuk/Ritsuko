@@ -50,6 +50,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (navidrome_config_folder, "compose.yml") | path_join }}'
+    mode: 0500
 
 - name: Adding Slskd port to firewalld
   become: true

@@ -43,7 +43,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (nextcloud_config_folder, "compose.yml") | path_join }}'
-    mode: 0700
+    mode: 0500
 
 - name: Start Nextcloud
   community.docker.docker_compose_v2:
