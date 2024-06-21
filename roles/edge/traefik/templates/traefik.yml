@@ -1,6 +1,6 @@
 providers:
   docker:
-    network: "{{ reverse_proxy_network }}"
+    network: reverse-proxy
     endpoint: "tcp://socket-proxy:2375"
     exposedByDefault: false
   file:

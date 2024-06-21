@@ -1,5 +1,4 @@
 ---
-reverse_proxy_network: '{{ undef(hint="Reverse Proxy Docker network") }}'
 reverse_proxy_network_subnet: '{{ undef(hint="Subnet of the Reverse Proxy Network") }}'
 authentik_role: '{{ undef(hint="Role of a server in a network (server|client)") }}'
 navidrome_config_folder: '{{ (container_config_folder | mandatory, "navidrome") | path_join }}'

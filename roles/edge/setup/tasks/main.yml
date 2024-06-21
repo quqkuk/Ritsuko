@@ -13,7 +13,7 @@
 
 - name: Create services network
   community.docker.docker_network:
-    name: '{{ reverse_proxy_network }}'
+    name: reverse-proxy
     driver: bridge
     internal: true
     ipam_config:

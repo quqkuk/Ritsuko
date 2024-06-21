@@ -120,5 +120,5 @@ networks:
   outside:
     internal: false
   reverse-proxy-network:
-    name: '{{ reverse_proxy_network }}'
+    name: reverse-proxy
     external: true
