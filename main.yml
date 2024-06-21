@@ -74,6 +74,9 @@
       tags:
         - auth
         - authentik
+    - role: edge/rss-bridge
+      tags:
+        - rss
     - role: edge/bitwarden
       tags:
         - password
@@ -84,9 +87,9 @@
       tags:
         - cloud
         - nextcloud
-    - role: edge/rss-bridge
+    - role: edge/grocy
       tags:
-        - rss
+        - grocy
     - role: edge/piped
       tags:
         - piped
@@ -119,9 +122,6 @@
       vars:
         navidrome_music_folder: '{{ (storage_pool_folder, "music") | path_join }}'
         navidrome_music_ingest_folder: '{{ (storage_pool_folder, "music-ingest") | path_join }}'
-    - role: edge/grocy
-      tags:
-        - grocy
   handlers:
     - *firewalld-handler
 
