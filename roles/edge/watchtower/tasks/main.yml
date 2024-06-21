@@ -9,7 +9,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (watchtower_config_folder, "compose.yaml") | path_join }}'
-    mode: 0500
+    mode: 0600
 
 - name: Start Watchtower
   community.docker.docker_compose_v2:

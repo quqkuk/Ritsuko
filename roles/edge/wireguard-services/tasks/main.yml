@@ -25,7 +25,7 @@
   ansible.builtin.template:
     src: '{{ wireguard_services_role }}.yml'
     dest: '{{ (wireguard_services_config_folder, "compose.yaml") | path_join }}'
-    mode: 0444
+    mode: 0644
 
 - name: Adding Wireguard port to firewalld
   become: true

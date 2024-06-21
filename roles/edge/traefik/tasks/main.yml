@@ -25,7 +25,7 @@
   ansible.builtin.template:
     src: traefik.yml
     dest: '{{ (traefik_config_folder, "traefik.yml") | path_join }}'
-    mode: 0544
+    mode: 0644
   register: traefik_static_config
 
 #TODO: Consider using rsync
@@ -33,13 +33,13 @@
   ansible.builtin.copy:
     src: configs/
     dest: '{{ (traefik_config_folder, "configs") | path_join }}'
-    mode: 0444
+    mode: 0644
 
 - name: Template Traefik's Compose file
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (traefik_config_folder, "compose.yaml") | path_join }}'
-    mode: 0544
+    mode: 0644
 
 - name: Adding services to firewalld
   become: true

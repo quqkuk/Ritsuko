@@ -41,7 +41,7 @@
       ansible.builtin.template:
         src: beets.yml
         dest: '{{ (navidrome_config_folder, "beets.yml") | path_join }}'
-        mode: 0400
+        mode: 0600
         owner: 100001000
         group: 100001000
       register: navidrome_beets_config
@@ -50,7 +50,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (navidrome_config_folder, "compose.yml") | path_join }}'
-    mode: 0500
+    mode: 0600
 
 - name: Adding Slskd port to firewalld
   become: true

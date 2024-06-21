@@ -34,7 +34,7 @@
       ansible.builtin.template:
         src: vaultwarden_ldap.toml
         dest: '{{ (bitwarden_config_folder, "vaultwarden_ldap.toml") | path_join }}'
-        mode: 0500
+        mode: 0600
         owner: 100001000
         group: 100001000
       register: bitwarden_ldap_config_template
@@ -43,7 +43,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (bitwarden_config_folder, "compose.yml") | path_join }}'
-    mode: 0500
+    mode: 0600
 
 - name: Start Bitwarden
   community.docker.docker_compose_v2:

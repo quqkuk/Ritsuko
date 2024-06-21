@@ -18,7 +18,7 @@
   ansible.builtin.template:
     src: compose.yml
     dest: '{{ (grocy_config_folder | mandatory, "compose.yml") | path_join }}'
-    mode: 0544
+    mode: 0644
 
 - name: Starting Grocy
   community.docker.docker_compose_v2:
