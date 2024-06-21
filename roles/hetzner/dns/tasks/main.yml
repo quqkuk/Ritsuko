@@ -5,7 +5,7 @@
   run_once: true
   community.dns.hetzner_dns_record_set:
     hetzner_token: '{{ hetzner_dns_api_token }}'
-    zone_name: magisystem.xyz
+    zone_name: '{{ hetzner_dns_record_zone }}'
     state: present
     prefix: '{{ hetzner_dns_record_prefix }}'
     type: '{{ item.type }}'

@@ -1,5 +1,6 @@
 ---
 hetzner_dns_api_token: '{{ undef(hint="API Token for Hetnzer''s DNS API") }}'
 hetzner_dns_record_prefix: '{{ undef(hint="Prefix for the DNS records") }}'
+hetzner_dns_record_zone: magisystem.xyz # DNS Zone to modify
 hetzner_dns_record_ipv4: '{{ public_ipv4 | default(omit) }}' # IPv4 Address for DNS A record
 hetzner_dns_record_ipv6: '{{ public_ipv6 | default(omit) }}' # IPv6 Address for DNS AAAA record
