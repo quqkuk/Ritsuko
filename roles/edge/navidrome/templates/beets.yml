@@ -26,6 +26,9 @@ import:
   timid: no
   log: /config/beet.log
 
+match:
+  strong_rec_thresh: 0.10
+
 embedart:
   auto: yes
   remove_art_file: yes
