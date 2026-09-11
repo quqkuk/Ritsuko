@@ -22,6 +22,6 @@ Label="traefik.http.routers.navidrome-auth-proxy.rule=(Host(`music.magisystem.xy
 Label=traefik.http.services.navidrome-auth-proxy.loadBalancer.server.port=4180
 
 [Service]
-TimeoutStartSec=15m
+TimeoutStartSec=infinity
 # Restart=on-failure
 # RestartSec=30s
